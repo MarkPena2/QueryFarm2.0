@@ -15,6 +15,20 @@
             --danger: #ef4444;
             --dark: #1f2937;
             --light: #f3f4f6;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --border-color: #e5e7eb;
+        }
+
+        /* ===== DARK MODE ===== */
+        body.dark-mode {
+            --text-primary: #f3f4f6;
+            --text-secondary: #d1d5db;
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --border-color: #374151;
         }
 
         /* ===== THEME VARIABLES ===== */
@@ -24,10 +38,22 @@
             --text-color: #1f2937;
         }
         
+        body.dark-mode.theme-farm {
+            --bg-gradient: linear-gradient(135deg, #1e3a1f 0%, #1a3a2a 100%);
+            --field-bg: #1f3a1f;
+            --text-color: #d4edda;
+        }
+        
         body.theme-space {
             --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
             --field-bg: #312e81;
             --text-color: #e0e7ff;
+        }
+        
+        body.dark-mode.theme-space {
+            --bg-gradient: linear-gradient(135deg, #0f0d2e 0%, #1a1564 100%);
+            --field-bg: #0f0d2e;
+            --text-color: #c7d2fe;
         }
         
         body.theme-ocean {
@@ -36,16 +62,28 @@
             --text-color: #164e63;
         }
         
+        body.dark-mode.theme-ocean {
+            --bg-gradient: linear-gradient(135deg, #0c2d44 0%, #164e63 100%);
+            --field-bg: #0c2d44;
+            --text-color: #a5f3fc;
+        }
+        
         body.theme-medieval {
             --bg-gradient: linear-gradient(135deg, #92400e 0%, #78350f 100%);
             --field-bg: #fef3c7;
             --text-color: #451a03;
         }
+        
+        body.dark-mode.theme-medieval {
+            --bg-gradient: linear-gradient(135deg, #3e2723 0%, #4a2f1f 100%);
+            --field-bg: #3e2723;
+            --text-color: #fde047;
+        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-gradient);
-            color: var(--text-color);
+            color: var(--text-primary);
             min-height: 100vh;
             padding: 10px;
             transition: all 0.5s ease;
@@ -59,8 +97,8 @@
 
         /* ===== TOPBAR ===== */
         .topbar {
-            background: rgba(31, 41, 55, 0.9);
-            color: white;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             padding: 12px 20px;
             font-size: 24px;
             font-weight: bold;
@@ -73,6 +111,7 @@
             flex-wrap: wrap;
             gap: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--border-color);
         }
 
         .topbar-title { flex: 1; min-width: 200px; }
@@ -82,6 +121,28 @@
             gap: 10px;
             flex-wrap: wrap;
             justify-content: flex-end;
+            align-items: center;
+        }
+
+        .mode-toggle {
+            background: transparent;
+            border: 2px solid var(--text-primary);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .mode-toggle:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.1);
         }
 
         /* ===== BUTTONS ===== */
@@ -128,11 +189,13 @@
 
         /* ===== CARD STYLING ===== */
         .card {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
 
         .card:hover { box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15); }
@@ -141,7 +204,7 @@
             font-size: 18px;
             font-weight: 700;
             margin-bottom: 15px;
-            color: var(--dark);
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -200,15 +263,41 @@
             min-height: 300px;
             position: relative;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: var(--text-color);
+        }
+
+        .story-section {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .story-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .story-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
         }
 
         .mission {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 15px;
             border-left: 4px solid var(--primary);
             animation: slideIn 0.5s ease;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
 
         @keyframes slideIn {
@@ -219,32 +308,26 @@
         .mission-title {
             font-weight: 700;
             margin-bottom: 8px;
-            color: var(--dark);
+            color: var(--text-primary);
             font-size: 16px;
         }
 
         .mission-description {
             font-size: 14px;
-            color: #6b7280;
+            color: var(--text-secondary);
             margin-bottom: 12px;
             line-height: 1.5;
         }
 
         .real-world-example {
-            background: #f0fdf4;
+            background: var(--bg-secondary);
             border-left: 3px solid var(--primary);
             padding: 10px;
             margin: 10px 0;
             border-radius: 4px;
             font-size: 13px;
             font-style: italic;
-            color: #15803d;
-        }
-
-        .theme-medieval .real-world-example {
-            background: #fef08a;
-            border-left-color: #92400e;
-            color: #78350f;
+            color: var(--text-secondary);
         }
 
         /* ===== CROP ANIMATION ===== */
@@ -270,11 +353,13 @@
         .sql-input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--border-color);
             border-radius: 6px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             transition: all 0.3s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
 
         .sql-input:focus {
@@ -288,8 +373,8 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-top: none;
             border-radius: 0 0 6px 6px;
             max-height: 150px;
@@ -302,10 +387,11 @@
             padding: 10px 12px;
             cursor: pointer;
             transition: background 0.2s ease;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
 
-        .autocomplete-item:hover { background: #f3f4f6; }
+        .autocomplete-item:hover { background: var(--bg-secondary); }
         .autocomplete-item.selected { background: var(--primary); color: white; }
 
         /* ===== ERROR & SUCCESS MESSAGES ===== */
@@ -324,16 +410,34 @@
             border-left: 4px solid #22c55e;
         }
 
+        body.dark-mode .message.success {
+            background: #1a3f1f;
+            color: #86efac;
+            border-left-color: #22c55e;
+        }
+
         .message.error {
             background: #fee2e2;
             color: #7c2d12;
             border-left: 4px solid #ef4444;
         }
 
+        body.dark-mode .message.error {
+            background: #3f1f1f;
+            color: #fca5a5;
+            border-left-color: #ef4444;
+        }
+
         .message.info {
             background: #dbeafe;
             color: #164e63;
             border-left: 4px solid #3b82f6;
+        }
+
+        body.dark-mode .message.info {
+            background: #1f3a4f;
+            color: #93c5fd;
+            border-left-color: #3b82f6;
         }
 
         /* ===== ACHIEVEMENTS ===== */
@@ -347,8 +451,8 @@
             text-align: center;
             padding: 10px;
             border-radius: 8px;
-            background: white;
-            border: 2px solid #e5e7eb;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
             cursor: pointer;
             transition: all 0.3s ease;
             opacity: 0.4;
@@ -368,13 +472,13 @@
         .achievement-name {
             font-size: 11px;
             font-weight: 600;
-            color: var(--dark);
+            color: var(--text-primary);
             word-break: break-word;
         }
 
         .achievement-tooltip {
             font-size: 12px;
-            color: #6b7280;
+            color: var(--text-secondary);
             margin-top: 5px;
             opacity: 0;
             max-height: 0;
@@ -394,7 +498,7 @@
         }
 
         .history-item {
-            background: #f3f4f6;
+            background: var(--bg-secondary);
             padding: 10px;
             border-radius: 6px;
             margin-bottom: 8px;
@@ -403,11 +507,14 @@
             cursor: pointer;
             transition: all 0.2s ease;
             border-left: 3px solid transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
 
         .history-item:hover {
-            background: #e5e7eb;
+            background: var(--border-color);
             border-left-color: var(--primary);
+            color: var(--text-primary);
         }
 
         /* ===== STATS ===== */
@@ -419,11 +526,12 @@
         }
 
         .stat-box {
-            background: rgba(255, 255, 255, 0.8);
+            background: var(--bg-secondary);
             padding: 12px;
             border-radius: 8px;
             text-align: center;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
         }
 
         .stat-value {
@@ -434,8 +542,45 @@
 
         .stat-label {
             font-size: 12px;
-            color: #6b7280;
+            color: var(--text-secondary);
             margin-top: 5px;
+        }
+
+        /* ===== LEADERBOARD ===== */
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .leaderboard-rank {
+            font-weight: 700;
+            font-size: 16px;
+            width: 30px;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            font-weight: 600;
+            margin: 0 10px;
+            color: var(--text-primary);
+        }
+
+        .leaderboard-score {
+            background: var(--primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         /* ===== MODALS ===== */
@@ -461,13 +606,17 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 30px;
             max-width: 500px;
             width: 90%;
             animation: slideUp 0.3s ease;
             box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         @keyframes slideUp {
@@ -479,7 +628,7 @@
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 15px;
-            color: var(--dark);
+            color: var(--text-primary);
         }
 
         .modal-buttons {
@@ -487,6 +636,23 @@
             gap: 10px;
             margin-top: 20px;
             flex-wrap: wrap;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
         /* ===== RESPONSIVE ===== */
@@ -546,7 +712,7 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #f3f4f6;
+            background: var(--bg-secondary);
             border-radius: 10px;
         }
 
@@ -564,13 +730,22 @@
     <div class="topbar">
         <div class="topbar-title">🌾 QUERYFARM 2.0</div>
         <div class="topbar-controls">
-            <button class="outline" onclick="toggleSettings()">⚙️ Settings</button>
+            <button class="mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+            <button class="outline" onclick="toggleProfile()">👤 Profile</button>
+            <button class="outline" onclick="toggleLeaderboard()">🏅 Leaderboard</button>
             <button class="outline" onclick="toggleAchievements()">🏆 Achievements</button>
+            <button class="outline" onclick="toggleSettings()">⚙️ Settings</button>
         </div>
     </div>
 
     <div class="container">
         <div class="main-panel">
+            <!-- STORY MODE SECTION -->
+            <div class="card" id="storyCard" style="display: none;">
+                <div class="card-title">📖 Story: Save the Farm</div>
+                <div class="story-section" id="storyContent"></div>
+            </div>
+
             <!-- DIFFICULTY & THEME SELECTOR -->
             <div class="card">
                 <div class="card-title">🎮 Difficulty Level</div>
@@ -631,6 +806,15 @@
 
         <!-- SIDEBAR -->
         <div class="sidebar">
+            <!-- USER PROFILE CARD -->
+            <div class="card">
+                <div class="card-title">👤 Player</div>
+                <div id="profileDisplay" style="font-size: 14px; color: var(--text-secondary);">
+                    <p id="userDisplay">Guest</p>
+                    <p id="userScore" style="margin-top: 5px; color: var(--primary); font-weight: 600;">Score: 0</p>
+                </div>
+            </div>
+
             <!-- QUERY HISTORY -->
             <div class="card">
                 <div class="card-title">📝 Query History</div>
@@ -646,9 +830,9 @@
             </div>
 
             <!-- HELP -->
-            <div class="card" style="background: #f0fdf4; border-top: 3px solid var(--primary);">
+            <div class="card" style="border-top: 3px solid var(--primary);">
                 <div class="card-title">💡 Tips</div>
-                <div style="font-size: 13px; line-height: 1.6; color: #4b5563;">
+                <div style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
                     <p>• Use SELECT to retrieve data</p>
                     <p>• WHERE filters results</p>
                     <p>• ORDER BY sorts results</p>
@@ -658,14 +842,33 @@
         </div>
     </div>
 
+    <!-- PROFILE MODAL -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-title">👤 Player Profile</div>
+            <div id="profileContent"></div>
+        </div>
+    </div>
+
+    <!-- LEADERBOARD MODAL -->
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-content">
+            <div class="modal-title">🏅 Global Leaderboard</div>
+            <div id="leaderboardContent"></div>
+            <div class="modal-buttons">
+                <button onclick="toggleLeaderboard()" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SETTINGS MODAL -->
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <div class="modal-title">⚙️ Settings</div>
-            <p style="margin-bottom: 15px; color: #6b7280;">Customize your QueryFarm experience</p>
+            <p style="margin-bottom: 15px; color: var(--text-secondary);">Customize your QueryFarm experience</p>
             
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--dark);">🎨 Theme:</label>
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-primary);">🎨 Theme:</label>
                 <div class="theme-picker">
                     <button class="theme-btn farm" title="Farm Theme" onclick="setTheme('farm')">🌾</button>
                     <button class="theme-btn space" title="Space Theme" onclick="setTheme('space')">🌌</button>
@@ -675,7 +878,7 @@
             </div>
 
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--dark);">🎮 Difficulty:</label>
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-primary);">🎮 Difficulty:</label>
                 <div class="difficulty-selector">
                     <button class="difficulty-btn easy" onclick="setDifficulty('easy')">Easy</button>
                     <button class="difficulty-btn normal" onclick="setDifficulty('normal')">Normal</button>
@@ -707,16 +910,33 @@
     <script>
         // ===== GAME STATE =====
         let gameState = {
+            username: 'Guest',
             currentMission: null,
             missionsCompleted: 0,
             correctAnswers: 0,
             streak: 0,
             difficulty: 'easy',
             theme: 'farm',
+            darkMode: false,
             queryHistory: [],
             achievements: {},
-            communityChallenge: null
+            storyProgress: 0,
+            totalScore: 0
         };
+
+        // ===== DARK MODE =====
+        function toggleDarkMode() {
+            gameState.darkMode = !gameState.darkMode;
+            document.body.classList.toggle('dark-mode', gameState.darkMode);
+            saveGameState();
+        }
+
+        function initializeDarkMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                gameState.darkMode = true;
+            }
+            document.body.classList.toggle('dark-mode', gameState.darkMode);
+        }
 
         // ===== LOAD STATE =====
         function loadGameState() {
@@ -729,10 +949,50 @@
                 initializeAchievements();
                 saveGameState();
             }
+            initializeDarkMode();
         }
 
         function saveGameState() {
             localStorage.setItem('queryFarmState', JSON.stringify(gameState));
+        }
+
+        // ===== STORY MODE =====
+        const STORY = {
+            intro: {
+                title: "The Drought Begins",
+                text: "A terrible drought has struck the QueryFarm! The crops are wilting, and the water systems have gone haywire. Your task: master SQL to help restore the farm's database and save the harvest!"
+            },
+            midpoint: {
+                title: "Crisis Deepens",
+                text: "The drought intensifies. Critical data queries are failing. You must quickly learn advanced SQL techniques to unlock hidden water reserves in the database system."
+            },
+            climax: {
+                title: "Final Challenge",
+                text: "This is it! The farm's future depends on executing the most complex queries perfectly. One final mission stands between you and salvation!"
+            },
+            victory: {
+                title: "The Farm is Saved! 🌱",
+                text: "Congratulations! Your SQL mastery has restored the QueryFarm to its former glory. The crops are growing, the database is healthy, and peace has returned!"
+            }
+        };
+
+        function updateStoryDisplay() {
+            const storyCard = document.getElementById('storyCard');
+            const storyContent = document.getElementById('storyContent');
+            
+            if (gameState.missionsCompleted === 0) {
+                storyCard.style.display = 'block';
+                const story = STORY.intro;
+                storyContent.innerHTML = `<div class="story-title">${story.title}</div><div class="story-text">${story.text}</div>`;
+            } else if (gameState.missionsCompleted < 5) {
+                storyCard.style.display = 'block';
+                const story = STORY.midpoint;
+                storyContent.innerHTML = `<div class="story-title">${story.title}</div><div class="story-text">${story.text}</div>`;
+            } else if (gameState.missionsCompleted < 9) {
+                storyCard.style.display = 'block';
+                const story = STORY.climax;
+                storyContent.innerHTML = `<div class="story-title">${story.title}</div><div class="story-text">${story.text}</div>`;
+            }
         }
 
         // ===== ACHIEVEMENTS SYSTEM =====
@@ -744,7 +1004,7 @@
             'switch_theme': { name: 'Decorator', icon: '🎨', condition: () => Object.keys(gameState.achievements).includes('switched_theme') },
             'all_difficulties': { name: 'Master', icon: '👑', condition: () => ['easy', 'normal', 'hard'].every(d => gameState.achievements[`difficulty_${d}`]) },
             'fifty_correct': { name: 'SQL Wizard', icon: '✨', condition: () => gameState.correctAnswers >= 50 },
-            'community_challenge': { name: 'Team Player', icon: '🤝', condition: () => gameState.achievements['community_challenge'] }
+            'dark_mode_user': { name: 'Night Owl', icon: '🌙', condition: () => gameState.darkMode }
         };
 
         function initializeAchievements() {
@@ -908,6 +1168,7 @@
             gameState.theme = theme;
             gameState.achievements['switched_theme'] = true;
             document.body.className = `theme-${theme}`;
+            if (gameState.darkMode) document.body.classList.add('dark-mode');
             
             document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`.theme-btn.${theme}`).classList.add('active');
@@ -965,13 +1226,110 @@
         function updateHistoryUI() {
             const historyContainer = document.getElementById('queryHistory');
             if (gameState.queryHistory.length === 0) {
-                historyContainer.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">No queries yet...</div>';
+                historyContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px;">No queries yet...</div>';
                 return;
             }
 
             historyContainer.innerHTML = gameState.queryHistory.map((query, idx) => `
                 <div class="history-item" onclick="document.getElementById('sqlInput').value = '${query.replace(/'/g, "\\'")}'">${query.substring(0, 40)}${query.length > 40 ? '...' : ''}</div>
             `).join('');
+        }
+
+        // ===== PROFILE SYSTEM =====
+        function toggleProfile() {
+            const modal = document.getElementById('profileModal');
+            const content = document.getElementById('profileContent');
+            
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+            } else {
+                content.innerHTML = `
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-primary);">Username:</label>
+                        <input type="text" id="usernameInput" class="input-field" value="${gameState.username}" placeholder="Enter your username">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <p style="color: var(--text-secondary);">Total Score: <span style="color: var(--primary); font-weight: 700;">${gameState.totalScore}</span></p>
+                        <p style="color: var(--text-secondary); margin-top: 10px;">Missions Completed: <span style="color: var(--primary); font-weight: 700;">${gameState.missionsCompleted}</span></p>
+                        <p style="color: var(--text-secondary); margin-top: 10px;">Correct Answers: <span style="color: var(--primary); font-weight: 700;">${gameState.correctAnswers}</span></p>
+                    </div>
+                    <div class="modal-buttons">
+                        <button onclick="saveProfile()" style="flex: 1; margin-right: 5px;">Save Profile</button>
+                        <button onclick="toggleProfile()" style="flex: 1;">Close</button>
+                    </div>
+                `;
+                modal.classList.add('active');
+            }
+        }
+
+        function saveProfile() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (username.length > 0) {
+                gameState.username = username;
+                updateLeaderboard();
+                updateProfileDisplay();
+                saveGameState();
+                showMessage(`✅ Profile saved! Welcome, ${username}!`, 'success');
+                toggleProfile();
+            } else {
+                showMessage('❌ Please enter a username.', 'error');
+            }
+        }
+
+        function updateProfileDisplay() {
+            const userDisplay = document.getElementById('userDisplay');
+            const userScore = document.getElementById('userScore');
+            userDisplay.textContent = `👤 ${gameState.username}`;
+            userScore.textContent = `Score: ${gameState.totalScore}`;
+        }
+
+        // ===== LEADERBOARD =====
+        function toggleLeaderboard() {
+            const modal = document.getElementById('leaderboardModal');
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+            } else {
+                renderLeaderboard();
+                modal.classList.add('active');
+            }
+        }
+
+        function updateLeaderboard() {
+            let leaderboard = JSON.parse(localStorage.getItem('queryFarmLeaderboard')) || [];
+            const existing = leaderboard.findIndex(entry => entry.username === gameState.username);
+            
+            if (existing !== -1) {
+                leaderboard[existing].score = Math.max(leaderboard[existing].score, gameState.totalScore);
+            } else {
+                leaderboard.push({ username: gameState.username, score: gameState.totalScore });
+            }
+            
+            leaderboard.sort((a, b) => b.score - a.score);
+            localStorage.setItem('queryFarmLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        function renderLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('queryFarmLeaderboard')) || [];
+            const content = document.getElementById('leaderboardContent');
+            
+            if (leaderboard.length === 0) {
+                content.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No scores yet. Be the first!</p>';
+                return;
+            }
+
+            let html = '<div style="margin-bottom: 15px;">';
+            leaderboard.slice(0, 10).forEach((entry, idx) => {
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                html += `
+                    <div class="leaderboard-entry">
+                        <div class="leaderboard-rank">${medal}</div>
+                        <div class="leaderboard-name">${entry.username}</div>
+                        <div class="leaderboard-score">${entry.score} pts</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            content.innerHTML = html;
         }
 
         // ===== QUERY VALIDATION =====
@@ -1000,15 +1358,21 @@
                 gameState.missionsCompleted++;
                 gameState.correctAnswers++;
                 gameState.streak++;
+                gameState.totalScore += (10 + gameState.streak * 5);
+                
                 showMessage(`✅ Correct! Your SQL query was valid! ${mission.crop}`, 'success');
                 
                 const field = document.getElementById('gameField');
                 field.innerHTML += `<div class="crop">${mission.crop}</div>`;
 
+                updateLeaderboard();
+
                 setTimeout(() => {
                     document.getElementById('sqlInput').value = '';
                     generateMission();
+                    updateStoryDisplay();
                     updateStatsUI();
+                    updateProfileDisplay();
                     checkAchievements();
                     saveGameState();
                 }, 1500);
@@ -1024,6 +1388,7 @@
             generateMission();
             document.getElementById('sqlInput').value = '';
             updateStatsUI();
+            updateStoryDisplay();
             saveGameState();
         }
 
@@ -1039,8 +1404,10 @@
             updateHistoryUI();
             updateStatsUI();
             updateAchievementsUI();
+            updateProfileDisplay();
             setTheme(gameState.theme);
             generateMission();
+            updateStoryDisplay();
         }
 
         function showMessage(text, type = 'info') {
@@ -1075,6 +1442,7 @@
         loadGameState();
         generateMission();
         updateHistoryUI();
+        updateStoryDisplay();
 
         // ENTER KEY SUPPORT
         document.getElementById('sqlInput').addEventListener('keypress', function(e) {
