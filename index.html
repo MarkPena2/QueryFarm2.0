@@ -1,866 +1,1085 @@
-cat > /home/claude/sql-farm.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QueryFarm — Learn &amp; Automate The Harvest</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --sky-top:#7fd0e8; --sky-bot:#dff3d3;
-    --field:#5fa83f; --field-dark:#4a8730;
-    --soil:#8a5a34; --soil-dark:#6b4326; --soil-crack:#c98a52;
-    --wood:#8a5a34; --wood-dark:#6b4326;
-    --panel:#fffaf0; --panel-edge:#e8d9b8;
-    --ink:#2e2a20; --ink-soft:#6b6252;
-    --barn:#d1495b; --barn-dark:#9c2f3d;
-    --gold:#ffb703; --gold-dark:#c98a06;
-    --water:#3fa7d6;
-    --learn:#3b6e8f;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 55%, #cdebc0 100%);
-    color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh;
-  }
-  h1,h2,h3,.display{font-family:'Fredoka',sans-serif;}
-  .mono{font-family:'IBM Plex Mono',monospace;}
-  .cloud{position:fixed;opacity:0.85;pointer-events:none;font-size:34px;animation:drift linear infinite;}
-  @keyframes drift{from{transform:translateX(-10vw);}to{transform:translateX(110vw);}}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryFarm 🌾 2.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #4ade80;
+            --secondary: #7dd3fc;
+            --accent: #fbbf24;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+        }
 
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
-    padding:12px 22px;background:var(--wood-dark);border-bottom:4px solid var(--wood);
-    position:relative;z-index:2;
-  }
-  .brand{font-family:'Fredoka',sans-serif;font-weight:700;color:#fff3d6;font-size:20px;display:flex;align-items:center;gap:8px;}
-  .stats{display:flex;align-items:center;gap:16px;color:#fff3d6;font-family:'IBM Plex Mono',monospace;font-size:13px;flex-wrap:wrap;}
-  .chip{background:#00000030;padding:5px 11px;border-radius:20px;display:flex;align-items:center;gap:6px;cursor:default;}
-  .rank-chip{background:var(--barn);font-family:'Fredoka',sans-serif;font-weight:600;padding:5px 13px;border-radius:20px;}
-  .xpbar-wrap{width:130px;}
-  .xpbar-track{background:#00000040;height:8px;border-radius:4px;overflow:hidden;}
-  .xpbar-fill{background:linear-gradient(90deg,var(--gold),#ffe08a);height:100%;transition:width .4s ease;}
+        /* ===== THEME VARIABLES ===== */
+        body.theme-farm {
+            --bg-gradient: linear-gradient(135deg, #7dd3fc 0%, #4ade80 100%);
+            --field-bg: #dcfce7;
+            --text-color: #1f2937;
+        }
+        
+        body.theme-space {
+            --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+            --field-bg: #312e81;
+            --text-color: #e0e7ff;
+        }
+        
+        body.theme-ocean {
+            --bg-gradient: linear-gradient(135deg, #0369a1 0%, #06b6d4 100%);
+            --field-bg: #cffafe;
+            --text-color: #164e63;
+        }
+        
+        body.theme-medieval {
+            --bg-gradient: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+            --field-bg: #fef3c7;
+            --text-color: #451a03;
+        }
 
-  .wrap{max-width:1180px;margin:0 auto;padding:20px 20px 60px;position:relative;z-index:1;}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 10px;
+            transition: all 0.5s ease;
+        }
 
-  .farm-hero{
-    background:var(--field);border:6px solid var(--wood-dark);border-radius:14px;padding:18px;
-    margin-bottom:22px;box-shadow:0 10px 30px rgba(0,0,0,0.25);display:flex;gap:18px;flex-wrap:wrap;
-  }
-  .grid-panel{flex:1;min-width:280px;}
-  .grid-title{color:#fff;font-weight:600;font-size:14px;margin-bottom:10px;}
-  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;background:var(--field-dark);padding:10px;border-radius:8px;}
-  .tile{
-    position:relative;aspect-ratio:1;border-radius:6px;
-    background:linear-gradient(160deg, var(--soil), var(--soil-dark));
-    display:flex;align-items:center;justify-content:center;font-size:26px;
-    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.25);transition:transform .2s ease;
-  }
-  .tile.thirsty::after{
-    content:"";position:absolute;inset:0;border-radius:6px;
-    background:repeating-linear-gradient(45deg, var(--soil-crack) 0 2px, transparent 2px 8px);
-    opacity:0.35;pointer-events:none;
-  }
-  .tile .waterbar{position:absolute;bottom:3px;left:4px;right:4px;height:4px;background:#00000040;border-radius:2px;overflow:hidden;}
-  .tile .waterbar i{display:block;height:100%;background:var(--water);}
-  .tile.highlight{animation:pulseGold 1.1s ease-in-out infinite;z-index:2;}
-  .tile.ready-glow{box-shadow:0 0 0 3px var(--gold), inset 0 -3px 0 rgba(0,0,0,0.25);animation:bob 1.6s ease-in-out infinite;}
-  @keyframes pulseGold{0%,100%{box-shadow:0 0 0 3px var(--gold);}50%{box-shadow:0 0 0 3px var(--gold), 0 0 14px 4px var(--gold);}}
-  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-  .tile.burst{animation:burst .8s ease-out;}
-  @keyframes burst{0%{transform:scale(1);}30%{transform:scale(1.25);filter:brightness(1.6);}100%{transform:scale(1);}}
-  .tile .badge{
-    position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;background:var(--barn);color:#fff;
-    font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;
-    box-shadow:0 2px 4px rgba(0,0,0,0.4);
-  }
-  .tile .pricetag{
-    position:absolute;bottom:-7px;right:-4px;background:#fff3d6;color:var(--ink);font-family:'IBM Plex Mono',monospace;
-    font-size:9px;padding:1px 4px;border-radius:8px;border:1px solid var(--gold-dark);
-  }
-  .tile .labeltag{
-    position:absolute;top:-6px;left:50%;transform:translateX(-50%);color:#fff;font-family:'IBM Plex Mono',monospace;
-    font-size:8.5px;padding:1px 5px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.3);
-  }
-  .tile.pulseall{animation:softpulse 1s ease;}
-  @keyframes softpulse{0%{filter:brightness(1);}40%{filter:brightness(1.5);}100%{filter:brightness(1);}}
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
 
-  .side-panel{width:220px;flex-shrink:0;}
-  .legend-box, .log-box, .summary-box{background:#ffffffcc;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
-  .legend-box .row, .log-box .entry{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #0002;}
-  .legend-box .row:last-child, .log-box .entry:last-child{border-bottom:none;}
-  .log-box .entry.new-entry{animation:slideIn .5s ease;background:#ffe9a8;border-radius:4px;padding:3px 5px;}
-  @keyframes slideIn{from{transform:translateX(30px);opacity:0;}to{transform:translateX(0);opacity:1;}}
-  .summary-box{text-align:center;}
-  .summary-box .big{font-family:'Fredoka',sans-serif;font-size:32px;color:var(--barn-dark);}
-  .summary-box .lbl{font-size:11px;color:var(--ink-soft);letter-spacing:1px;text-transform:uppercase;}
-  .panel-title{font-weight:600;color:#fff;font-size:12px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;}
-  .catalog-key{display:flex;gap:10px;flex-wrap:wrap;color:#fff;font-size:12px;margin-top:10px;}
-  .catalog-key span{background:#00000030;padding:3px 8px;border-radius:12px;}
+        /* ===== TOPBAR ===== */
+        .topbar {
+            background: rgba(31, 41, 55, 0.9);
+            color: white;
+            padding: 12px 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
 
-  .layout{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;}
-  .mission-list{width:230px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;}
-  .tier-header{
-    font-family:'Fredoka',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
-    color:var(--wood-dark);margin:10px 0 2px;padding-bottom:3px;border-bottom:2px solid var(--wood-dark);opacity:0.75;
-  }
-  .tier-header:first-child{margin-top:0;}
-  .mission-item{
-    background:var(--panel);border:1px solid var(--panel-edge);border-radius:8px;padding:9px 12px;cursor:pointer;
-    font-family:'IBM Plex Mono',monospace;font-size:12.5px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 5px rgba(0,0,0,0.12);
-  }
-  .mission-item.active{outline:2px solid var(--barn);}
-  .mission-item.locked{opacity:0.45;cursor:not-allowed;}
-  .mission-item .n{width:22px;height:22px;border-radius:50%;background:var(--field-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
-  .mission-item.solved .n{background:var(--gold-dark);}
-  .mission-item .t{flex:1;line-height:1.25;}
-  .mission-item .check{color:var(--field-dark);font-weight:700;}
+        .topbar-title { flex: 1; min-width: 200px; }
 
-  .mission-detail{flex:1;min-width:300px;background:var(--panel);border:1px solid var(--panel-edge);border-radius:10px;padding:26px 28px 30px;box-shadow:0 8px 22px rgba(0,0,0,0.18);}
-  .m-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
-  .m-title{font-size:26px;margin:0 0 12px;color:var(--ink);}
-  .m-concept{font-size:15px;line-height:1.6;margin-bottom:16px;}
-  .m-concept b{color:var(--barn-dark);}
-  .schema-box{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#f2ead6;border-radius:6px;padding:10px 14px;margin-bottom:16px;line-height:1.7;color:var(--ink-soft);}
-  .schema-box b{color:var(--ink);}
-  .task-box{background:#fff1e0;border-left:4px solid var(--barn);padding:12px 16px;font-size:14px;line-height:1.55;margin-bottom:16px;border-radius:0 6px 6px 0;}
-  .task-box b{font-family:'Fredoka',sans-serif;color:var(--barn-dark);}
-  textarea#editor{
-    width:100%;min-height:100px;background:#22271d;color:#c9f2c0;font-family:'IBM Plex Mono',monospace;font-size:14px;
-    line-height:1.5;border:none;border-radius:8px;padding:14px 16px;resize:vertical;
-    box-shadow:inset 0 0 0 1px #0c0f0a, inset 0 2px 8px rgba(0,0,0,0.4);
-  }
-  textarea#editor:focus{outline:2px solid var(--gold);}
-  .editor-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center;}
-  button{font-family:'Fredoka',sans-serif;font-weight:600;cursor:pointer;border-radius:8px;border:none;font-size:14px;}
-  .btn-run{background:var(--barn);color:#fff;padding:11px 22px;box-shadow:0 3px 0 var(--barn-dark);}
-  .btn-run:hover{transform:translateY(1px);box-shadow:0 2px 0 var(--barn-dark);}
-  .btn-run:disabled{opacity:0.5;cursor:wait;}
-  .btn-hint{background:transparent;color:var(--ink-soft);padding:10px 14px;border:1px dashed var(--ink-soft);}
-  .btn-hint:hover{color:var(--ink);border-color:var(--ink);}
-  .btn-next{background:var(--field-dark);color:#fff;padding:11px 22px;box-shadow:0 3px 0 #325e21;}
-  .btn-learn{background:var(--learn);color:#fff;padding:11px 24px;box-shadow:0 3px 0 #234a5f;}
-  .btn-learn:hover{transform:translateY(1px);box-shadow:0 2px 0 #234a5f;}
-  .link-back{background:none;border:none;color:var(--learn);font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;}
-  .hint-text{font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:8px;display:none;font-family:'IBM Plex Mono',monospace;}
-  .output-area{margin-top:18px;}
-  .verdict{font-family:'Fredoka',sans-serif;font-weight:700;font-size:20px;padding:8px 16px;display:inline-block;border-radius:20px;margin-bottom:10px;}
-  .verdict.pass{color:#fff;background:var(--field-dark);}
-  .verdict.fail{color:#fff;background:var(--barn-dark);}
-  .error-text{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--barn-dark);margin-bottom:10px;white-space:pre-wrap;}
-  .result-table-wrap{overflow-x:auto;border:1px solid var(--panel-edge);border-radius:6px;margin-bottom:10px;}
-  table.result{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
-  table.result th{background:#e9f3e2;padding:6px 10px;text-align:left;border-bottom:1px solid #c9dfc0;white-space:nowrap;}
-  table.result td{padding:5px 10px;border-bottom:1px solid #eef4ec;white-space:nowrap;}
-  .toast{
-    position:fixed;top:70px;right:20px;background:var(--gold);color:var(--ink);font-family:'Fredoka',sans-serif;font-weight:600;
-    padding:10px 18px;border-radius:20px;box-shadow:0 6px 16px rgba(0,0,0,0.3);z-index:50;
-    animation:toastIn .3s ease, toastOut .4s ease 2.2s forwards;
-  }
-  @keyframes toastIn{from{transform:translateY(-16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-  @keyframes toastOut{to{transform:translateY(-16px);opacity:0;}}
-  .journey-complete{text-align:center;padding:40px 10px;}
+        .topbar-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
 
-  /* LEARN STAGE */
-  .learn-badge{
-    display:inline-block;background:var(--learn);color:#fff;font-family:'Fredoka',sans-serif;font-weight:600;
-    font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:12px;margin-bottom:10px;
-  }
-  .syntax-box{
-    background:#1d2b33;color:#9fe6c8;font-family:'IBM Plex Mono',monospace;font-size:13.5px;
-    padding:12px 16px;border-radius:8px;margin-bottom:16px;overflow-x:auto;white-space:pre;
-  }
-  .example-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);margin:16px 0 6px;}
-  .example-query{background:#f2ead6;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:8px 12px;border-radius:6px 6px 0 0;color:var(--ink);border-bottom:2px solid var(--learn);}
-  .example-note{font-size:12.5px;color:var(--ink-soft);margin-top:6px;font-style:italic;}
-  .ba-wrap{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
-  .ba-col{flex:1;min-width:150px;}
-  .ba-label{font-family:'Fredoka',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;color:var(--ink-soft);}
-  .pitfall-box{
-    background:#fff3d6;border:1px dashed var(--gold-dark);border-radius:6px;padding:10px 14px;font-size:13px;
-    line-height:1.5;margin:16px 0 20px;
-  }
-  .pitfall-box b{color:var(--gold-dark);}
+        /* ===== BUTTONS ===== */
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--primary);
+            color: white;
+        }
 
-  @media (max-width:760px){
-    .layout{flex-direction:column;}
-    .mission-list{width:100%;flex-direction:row;flex-wrap:wrap;}
-    .tier-header{width:100%;}
-    .farm-hero{flex-direction:column;}
-    .side-panel{width:100%;}
-  }
-</style>
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+        button:active { transform: translateY(0); }
+        button.secondary { background: var(--accent); color: var(--dark); }
+        button.danger { background: var(--danger); }
+        button.outline { background: transparent; border: 2px solid white; color: white; }
+
+        /* ===== CONTAINERS ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr 300px;
+            }
+        }
+
+        .main-panel { grid-column: 1; }
+        .sidebar { grid-column: 1; display: flex; flex-direction: column; gap: 15px; }
+
+        @media (min-width: 1024px) {
+            .sidebar { grid-column: 2; grid-row: 1 / 3; }
+        }
+
+        /* ===== CARD STYLING ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover { box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15); }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== DIFFICULTY SELECTOR ===== */
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-btn {
+            padding: 8px 12px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn.easy { background: #86efac; color: #166534; }
+        .difficulty-btn.normal { background: #fbbf24; color: #92400e; }
+        .difficulty-btn.hard { background: #f87171; color: #7c2d12; }
+        .difficulty-btn.active { border-color: var(--dark); transform: scale(1.05); }
+
+        /* ===== THEME PICKER ===== */
+        .theme-picker {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .theme-btn.farm { background: linear-gradient(135deg, #4ade80, #7dd3fc); }
+        .theme-btn.space { background: linear-gradient(135deg, #3730a3, #1e1b4b); }
+        .theme-btn.ocean { background: linear-gradient(135deg, #06b6d4, #0369a1); }
+        .theme-btn.medieval { background: linear-gradient(135deg, #fef3c7, #92400e); }
+        .theme-btn.active { border-color: white; transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); }
+
+        /* ===== GAME FIELD ===== */
+        .game-field {
+            background: var(--field-bg);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 300px;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .mission {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .mission-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-size: 16px;
+        }
+
+        .mission-description {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .real-world-example {
+            background: #f0fdf4;
+            border-left: 3px solid var(--primary);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-style: italic;
+            color: #15803d;
+        }
+
+        .theme-medieval .real-world-example {
+            background: #fef08a;
+            border-left-color: #92400e;
+            color: #78350f;
+        }
+
+        /* ===== CROP ANIMATION ===== */
+        .crop {
+            display: inline-block;
+            font-size: 48px;
+            margin: 10px;
+            animation: grow 0.8s ease-out;
+        }
+
+        @keyframes grow {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* ===== SQL INPUT ===== */
+        .sql-input-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .sql-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .sql-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .autocomplete-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .autocomplete-item:hover { background: #f3f4f6; }
+        .autocomplete-item.selected { background: var(--primary); color: white; }
+
+        /* ===== ERROR & SUCCESS MESSAGES ===== */
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            animation: slideIn 0.4s ease;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #7c2d12;
+            border-left: 4px solid #ef4444;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #164e63;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* ===== ACHIEVEMENTS ===== */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .achievement {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .achievement.unlocked {
+            opacity: 1;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+        }
+
+        .achievement-icon {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .achievement-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--dark);
+            word-break: break-word;
+        }
+
+        .achievement-tooltip {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .achievement:hover .achievement-tooltip {
+            opacity: 1;
+            max-height: 100px;
+        }
+
+        /* ===== QUERY HISTORY ===== */
+        .query-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .history-item:hover {
+            background: #e5e7eb;
+            border-left-color: var(--primary);
+        }
+
+        /* ===== STATS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        /* ===== MODALS ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .topbar {
+                flex-direction: column;
+                font-size: 20px;
+            }
+
+            .topbar-controls {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .game-field {
+                min-height: 200px;
+            }
+
+            .crop {
+                font-size: 36px;
+                margin: 5px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .difficulty-selector {
+                justify-content: space-between;
+            }
+
+            .difficulty-btn {
+                flex: 1;
+                min-width: 70px;
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .achievements-grid {
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 8px;
+            }
+
+            button {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22c55e;
+        }
+    </style>
 </head>
-<body>
-
-<div class="cloud" style="top:40px;left:0;animation-duration:70s;">&#9729;</div>
-<div class="cloud" style="top:90px;left:0;animation-duration:95s;animation-delay:-30s;font-size:26px;">&#9729;</div>
-
-<div class="topbar">
-  <div class="brand">&#127806; QUERYFARM</div>
-  <div class="stats">
-    <div class="rank-chip" id="rankPill">GREENHORN</div>
-    <div class="chip">&#127775; <span id="coinLabel">0</span></div>
-    <div class="chip">
-      <div class="xpbar-wrap"><div class="xpbar-track"><div class="xpbar-fill" id="xpFill" style="width:0%"></div></div></div>
-      <span id="xpLabel">0 XP</span>
+<body class="theme-farm">
+    <div class="topbar">
+        <div class="topbar-title">🌾 QUERYFARM 2.0</div>
+        <div class="topbar-controls">
+            <button class="outline" onclick="toggleSettings()">⚙️ Settings</button>
+            <button class="outline" onclick="toggleAchievements()">🏆 Achievements</button>
+        </div>
     </div>
-    <div class="chip" id="missionsCount">0/22 missions</div>
-  </div>
-</div>
 
-<div class="wrap">
-  <div class="farm-hero">
-    <div class="grid-panel">
-      <div class="grid-title">YOUR FIELD — live, driven by your queries</div>
-      <div class="grid" id="grid"></div>
-      <div class="catalog-key" id="catalogKey"></div>
+    <div class="container">
+        <div class="main-panel">
+            <!-- DIFFICULTY & THEME SELECTOR -->
+            <div class="card">
+                <div class="card-title">🎮 Difficulty Level</div>
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn easy active" onclick="setDifficulty('easy')">Easy</button>
+                    <button class="difficulty-btn normal" onclick="setDifficulty('normal')">Normal</button>
+                    <button class="difficulty-btn hard" onclick="setDifficulty('hard')">Hard</button>
+                </div>
+
+                <div class="card-title" style="margin-top: 15px;">🎨 Theme</div>
+                <div class="theme-picker">
+                    <button class="theme-btn farm active" title="Farm Theme" onclick="setTheme('farm')">🌾</button>
+                    <button class="theme-btn space" title="Space Theme" onclick="setTheme('space')">🌌</button>
+                    <button class="theme-btn ocean" title="Ocean Theme" onclick="setTheme('ocean')">🌊</button>
+                    <button class="theme-btn medieval" title="Medieval Theme" onclick="setTheme('medieval')">🏰</button>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="card">
+                <div class="card-title">📊 Progress</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="missionCount">0</div>
+                        <div class="stat-label">Missions</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="correctCount">0</div>
+                        <div class="stat-label">Correct</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="streakCount">0</div>
+                        <div class="stat-label">Streak</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME FIELD -->
+            <div class="card">
+                <div class="card-title">🎯 Mission</div>
+                <div class="game-field" id="gameField"></div>
+            </div>
+
+            <!-- SQL INPUT -->
+            <div class="card">
+                <div class="card-title">💻 SQL Query</div>
+                <div class="sql-input-wrapper">
+                    <input type="text" id="sqlInput" class="sql-input" placeholder="Write your SQL query here..." autocomplete="off">
+                    <div class="autocomplete-list" id="autocompleteList" style="display: none;"></div>
+                </div>
+                <button onclick="submitQuery()" style="width: 100%; margin-bottom: 10px;">✓ Submit Query</button>
+                <button class="outline" onclick="skipMission()" style="width: 100%;">⏭️ Skip Mission</button>
+            </div>
+
+            <!-- MESSAGES -->
+            <div id="messageContainer"></div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <!-- QUERY HISTORY -->
+            <div class="card">
+                <div class="card-title">📝 Query History</div>
+                <div class="query-history" id="queryHistory"></div>
+            </div>
+
+            <!-- ACHIEVEMENTS PREVIEW -->
+            <div class="card">
+                <div class="card-title">🏆 Achievements</div>
+                <div id="achievementsPreview" style="font-size: 28px; text-align: center;">
+                    🔒 🔒 🔒
+                </div>
+            </div>
+
+            <!-- HELP -->
+            <div class="card" style="background: #f0fdf4; border-top: 3px solid var(--primary);">
+                <div class="card-title">💡 Tips</div>
+                <div style="font-size: 13px; line-height: 1.6; color: #4b5563;">
+                    <p>• Use SELECT to retrieve data</p>
+                    <p>• WHERE filters results</p>
+                    <p>• ORDER BY sorts results</p>
+                    <p>• JOIN combines tables</p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="side-panel">
-      <div class="panel-title">Mission Readout</div>
-      <div id="readout"></div>
-      <div class="panel-title">HQ Log</div>
-      <div class="log-box" id="logBox">No reports filed yet.</div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-title">⚙️ Settings</div>
+            <p style="margin-bottom: 15px; color: #6b7280;">Customize your QueryFarm experience</p>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--dark);">🎨 Theme:</label>
+                <div class="theme-picker">
+                    <button class="theme-btn farm" title="Farm Theme" onclick="setTheme('farm')">🌾</button>
+                    <button class="theme-btn space" title="Space Theme" onclick="setTheme('space')">🌌</button>
+                    <button class="theme-btn ocean" title="Ocean Theme" onclick="setTheme('ocean')">🌊</button>
+                    <button class="theme-btn medieval" title="Medieval Theme" onclick="setTheme('medieval')">🏰</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--dark);">🎮 Difficulty:</label>
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn easy" onclick="setDifficulty('easy')">Easy</button>
+                    <button class="difficulty-btn normal" onclick="setDifficulty('normal')">Normal</button>
+                    <button class="difficulty-btn hard" onclick="setDifficulty('hard')">Hard</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <button onclick="clearAllData()" class="danger" style="width: 100%;">🗑️ Clear All Data</button>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="toggleSettings()" style="flex: 1;">Close</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div class="layout">
-    <div class="mission-list" id="missionList"></div>
-    <div class="mission-detail" id="missionDetail">Loading the farm database…</div>
-  </div>
-</div>
-
-<script>
-const LESSONS = [
-  // ───────── BASICS ─────────
-  { id:'scan-all', tier:'Basics', title:'Full Field Scan', type:'select', visualMode:'pulse', orderMatters:false,
-    concept:"Every automation script starts the same way: pull the full record. <b>SELECT * FROM table;</b> returns every column and every row — the whole field, unfiltered.",
-    syntax:"SELECT *\nFROM table_name;",
-    example:{ query:"SELECT * FROM crop_catalog;", cols:['name','emoji','market_price'],
-      rows:[['corn','🌽',3],['pumpkin','🎃',6],['wheat','🌾',2],['carrot','🥕',4]],
-      note:"The * means \"every column\" — you never have to type them all out by hand." },
-    pitfall:"Forgetting FROM (or misspelling the table name) is the single most common first mistake — SQL always needs to know which table to read.",
-    task:"Run a full diagnostic scan of every plot. Select every column and every row from <code>plots</code>.",
-    hint:"SELECT * FROM plots;", solution:"SELECT * FROM plots;" },
-
-  { id:'scan-basics', tier:'Basics', title:'Quick Status Check', type:'select', visualMode:'pulse', orderMatters:false,
-    concept:"You rarely need the whole record — just the relevant columns. List exact column names after SELECT, separated by commas, and they come back in the order you listed them, not their original table order.",
-    syntax:"SELECT column1, column2\nFROM table_name;",
-    example:{ query:"SELECT name, market_price FROM crop_catalog;", cols:['name','market_price'],
-      rows:[['corn',3],['pumpkin',6],['wheat',2],['carrot',4]],
-      note:"Only pulling what you need keeps results easier to read — and on huge tables, easier on the database too." },
-    pitfall:"Column order in your SELECT list is entirely up to you — it does not need to match how the columns are stored in the table.",
-    task:"Check just the <code>crop</code> and <code>stage</code> of every plot.",
-    hint:"SELECT crop, stage FROM plots;", solution:"SELECT crop, stage FROM plots;" },
-
-  { id:'find-ready', tier:'Basics', title:'Ready To Harvest', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"<b>WHERE</b> filters rows before they reach the drone controller — the engine checks the condition against every row and keeps only the ones where it's true. Text values always go in single quotes.",
-    syntax:"SELECT *\nFROM table_name\nWHERE column = 'value';",
-    example:{ query:"SELECT * FROM crop_catalog WHERE name = 'pumpkin';", cols:['name','emoji','market_price'],
-      rows:[['pumpkin','🎃',6]], note:"Only the row(s) matching exactly get returned — everything else is filtered out." },
-    pitfall:"MySQL and SQLite string comparisons are case-insensitive by default, but the quotes themselves are never optional for text.",
-    task:"Locate every plot that's ripe and ready to harvest (<code>stage = 'ready'</code>). Select every column.",
-    hint:"SELECT * FROM plots WHERE stage = 'ready';", solution:"SELECT * FROM plots WHERE stage = 'ready';" },
-
-  { id:'find-thirsty', tier:'Basics', title:'Thirsty Plots', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"WHERE works on numbers too, using &gt;, &lt;, =, &gt;=, &lt;= — no quotes needed for numeric comparisons.",
-    syntax:"SELECT *\nFROM table_name\nWHERE column > number;",
-    example:{ query:"SELECT * FROM crop_catalog WHERE market_price > 3;", cols:['name','emoji','market_price'],
-      rows:[['pumpkin','🎃',6],['carrot','🥕',4]], note:"Rows where the condition is false are simply left out — no error, no placeholder." },
-    pitfall:"Quoting a number, like WHERE market_price > '3', usually still works by accident in SQLite — but forming the habit of quoting numbers will break you the moment you switch to a stricter database.",
-    task:"Find every plot that's thirsty: <code>water_level &lt; 3</code>. Select every column.",
-    hint:"SELECT * FROM plots WHERE water_level < 3;", solution:"SELECT * FROM plots WHERE water_level < 3;" },
-
-  { id:'and-or', tier:'Basics', title:'Combine The Conditions', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"<b>AND</b> requires every condition to be true. <b>OR</b> only needs one of them to be true. Real automation logic is almost always a combination, like 'ready to harvest OR nearly out of water'.",
-    syntax:"SELECT *\nFROM table_name\nWHERE condA OR condB;",
-    example:{ query:"SELECT * FROM crop_catalog WHERE market_price > 5 OR name = 'wheat';", cols:['name','emoji','market_price'],
-      rows:[['pumpkin','🎃',6],['wheat','🌾',2]], note:"Pumpkin qualifies on price, wheat qualifies on name — either reason is enough with OR." },
-    pitfall:"AND is evaluated before OR, the same way multiplication happens before addition — use parentheses whenever you mix them, to make the grouping unambiguous.",
-    task:"Find every plot that's either ready to harvest OR critically dry (<code>water_level &lt; 2</code>) — either reason is enough to flag it.",
-    hint:"SELECT * FROM plots WHERE stage = 'ready' OR water_level < 2;", solution:"SELECT * FROM plots WHERE stage = 'ready' OR water_level < 2;" },
-
-  { id:'priority-watering', tier:'Basics', title:'Priority Watering', type:'select', visualMode:'order-badge', idCol:0, orderMatters:true,
-    concept:"<b>ORDER BY column ASC/DESC</b> sorts rows; pair it with <b>LIMIT n</b> to grab the 'top N' of anything — here, the driest plots. LIMIT always comes last in the query.",
-    syntax:"SELECT *\nFROM table_name\nORDER BY column ASC\nLIMIT n;",
-    example:{ query:"SELECT * FROM crop_catalog ORDER BY market_price ASC LIMIT 2;", cols:['name','emoji','market_price'],
-      rows:[['wheat','🌾',2],['corn','🌽',3]], note:"Cheapest two crops, lowest price first — exactly the 'top N' pattern." },
-    pitfall:"LIMIT must go after ORDER BY — putting it anywhere else in the query is a syntax error.",
-    task:"Prioritize the water drone: get the 3 thirstiest plots. Order by <code>water_level</code> ascending, then limit to 3.",
-    hint:"SELECT * FROM plots ORDER BY water_level ASC LIMIT 3;", solution:"SELECT * FROM plots ORDER BY water_level ASC LIMIT 3;" },
-
-  // ───────── INTERMEDIATE ─────────
-  { id:'in-operator', tier:'Intermediate', title:'The Crop Shortlist', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"<b>IN</b> compares one column against a whole list of values, instead of chaining the same column with OR again and again.",
-    syntax:"SELECT *\nFROM table_name\nWHERE column IN (value1, value2);",
-    example:{ query:"SELECT * FROM crop_catalog WHERE name IN ('corn','wheat');", cols:['name','emoji','market_price'],
-      rows:[['corn','🌽',3],['wheat','🌾',2]], note:"Same result as 'name = corn OR name = wheat', with a lot less typing." },
-    pitfall:"NOT IN flips the logic to exclusion, but if the value list ever contains a NULL, NOT IN can quietly return zero rows — keep the list clean.",
-    task:"Find every plot growing corn, wheat, or carrot — skip pumpkins entirely.",
-    hint:"SELECT * FROM plots WHERE crop IN ('corn','wheat','carrot');", solution:"SELECT * FROM plots WHERE crop IN ('corn','wheat','carrot');" },
-
-  { id:'between-operator', tier:'Intermediate', title:'The Comfort Zone', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"<b>BETWEEN</b> checks whether a value falls within a range, inclusive on both ends — shorthand for writing two separate >= and <= conditions.",
-    syntax:"SELECT *\nFROM table_name\nWHERE column BETWEEN low AND high;",
-    example:{ query:"SELECT * FROM crop_catalog WHERE market_price BETWEEN 3 AND 5;", cols:['name','emoji','market_price'],
-      rows:[['corn','🌽',3],['carrot','🥕',4]], note:"Both 3 and 5 count as matches — BETWEEN never excludes its own edges." },
-    pitfall:"If you need an exclusive range (endpoints not included), BETWEEN won't do it — fall back to writing > and < by hand.",
-    task:"Find every plot with a <code>water_level</code> between 2 and 4, inclusive.",
-    hint:"SELECT * FROM plots WHERE water_level BETWEEN 2 AND 4;", solution:"SELECT * FROM plots WHERE water_level BETWEEN 2 AND 4;" },
-
-  { id:'null-check', tier:'Intermediate', title:'Nothing Planted', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"<b>NULL</b> means 'no value recorded' — not zero, not blank text. You can't test it with =; you need the dedicated <b>IS NULL</b> / <b>IS NOT NULL</b> operators.",
-    syntax:"SELECT *\nFROM table_name\nWHERE column IS NULL;",
-    example:{ query:"SELECT * FROM deliveries WHERE driver IS NULL;", cols:['id','driver'],
-      rows:[[2,null]], note:"Delivery #1 has a driver on file; delivery #2 doesn't — only the unassigned one comes back." },
-    pitfall:"Writing WHERE crop = NULL never throws an error — it just silently matches nothing, which makes it a sneaky bug to track down.",
-    task:"Find every plot with nothing currently planted — where <code>crop IS NULL</code>.",
-    hint:"SELECT * FROM plots WHERE crop IS NULL;", solution:"SELECT * FROM plots WHERE crop IS NULL;" },
-
-  { id:'harvest-time', tier:'Intermediate', title:'Harvest Time!', type:'mutate', visualMode:'harvest', compareTable:'plots',
-    concept:"<b>UPDATE table SET col = value WHERE condition;</b> changes existing rows in place. Leave off the WHERE clause and it changes every single row — always double-check your filter before running it for real.",
-    syntax:"UPDATE table_name\nSET column = value\nWHERE condition;",
-    example:{ mutate:true, query:"UPDATE crop_catalog SET market_price = 5 WHERE name = 'wheat';",
-      cols:['name','market_price'], before:[['wheat',2]], after:[['wheat',5]],
-      note:"Only the matched row changes — every other row is untouched." },
-    pitfall:"A good habit before any UPDATE: run the WHERE clause as a plain SELECT first and eyeball exactly which rows it matches.",
-    task:"Send the harvest drones! For every plot where <code>stage = 'ready'</code>, set <code>crop = NULL</code>, <code>stage = 'empty'</code>, and <code>water_level = 0</code>.",
-    hint:"UPDATE plots SET crop = NULL, stage = 'empty', water_level = 0 WHERE stage = 'ready';",
-    solution:"UPDATE plots SET crop = NULL, stage = 'empty', water_level = 0 WHERE stage = 'ready';" },
-
-  { id:'file-report', tier:'Intermediate', title:'File The Report', type:'mutate', visualMode:'log', compareTable:'harvest_log',
-    concept:"<b>INSERT INTO table (columns) VALUES (...)</b> adds a brand new row. List the columns you're filling, then matching values in the exact same order.",
-    syntax:"INSERT INTO table_name (col1, col2)\nVALUES (val1, val2);",
-    example:{ mutate:true, query:"INSERT INTO harvest_log (plot_id, crop, day) VALUES (7, 'wheat', 3);",
-      cols:['plot_id','crop','day'], before:[[9,'wheat',5],[12,'carrot',8]], after:[[9,'wheat',5],[12,'carrot',8],[7,'wheat',3]],
-      note:"The table gains exactly one new row — everything else stays exactly as it was." },
-    pitfall:"The number and order of columns you list must exactly match the number and order of the values you provide.",
-    task:"File a report to HQ: log that plot <code>3</code> (crop <code>'pumpkin'</code>) was harvested on day <code>12</code>. Insert into <code>harvest_log</code> using columns <code>plot_id, crop, day</code>.",
-    hint:"INSERT INTO harvest_log (plot_id, crop, day) VALUES (3, 'pumpkin', 12);",
-    solution:"INSERT INTO harvest_log (plot_id, crop, day) VALUES (3, 'pumpkin', 12);" },
-
-  { id:'empty-count', tier:'Intermediate', title:'Count The Empties', type:'select', visualMode:'summary', summaryLabel:'Empty plots', orderMatters:false,
-    concept:"Aggregate functions like <b>COUNT(*)</b> collapse many rows into one summary number instead of returning them individually. Name the result with <b>AS</b> so it's readable.",
-    syntax:"SELECT COUNT(*) AS alias\nFROM table_name\nWHERE condition;",
-    example:{ query:"SELECT COUNT(*) AS pricey_crops FROM crop_catalog WHERE market_price > 3;", cols:['pricey_crops'], rows:[[2]],
-      note:"Two rows (pumpkin and carrot) matched the condition, so COUNT(*) collapses them into a single number: 2." },
-    pitfall:"COUNT(*) counts rows regardless of content; use COUNT(column) instead only when you specifically want to skip NULLs in that column.",
-    task:"How many plots are currently empty? Return it as one column named <code>empty_count</code>.",
-    hint:"SELECT COUNT(*) AS empty_count FROM plots WHERE stage = 'empty';", solution:"SELECT COUNT(*) AS empty_count FROM plots WHERE stage = 'empty';" },
-
-  { id:'crop-census', tier:'Intermediate', title:'Crop Census', type:'select', visualMode:'legend', orderMatters:false,
-    concept:"<b>GROUP BY column</b> buckets rows that share a value, so an aggregate function runs once per bucket instead of once over everything.",
-    syntax:"SELECT column, COUNT(*) AS alias\nFROM table_name\nGROUP BY column;",
-    example:{ query:"SELECT crop, COUNT(*) AS total FROM harvest_log GROUP BY crop;", cols:['crop','total'], rows:[['wheat',1],['carrot',1]],
-      note:"Each distinct crop becomes its own group, and COUNT(*) tallies rows within that group only." },
-    pitfall:"Any column in your SELECT that isn't wrapped in an aggregate function must also appear in GROUP BY, or SQLite won't know which row's value to display for it.",
-    task:"Take a crop census: count how many plots have each <code>crop</code> planted (ignore empty plots). Return <code>crop</code> and the count as <code>total</code>.",
-    hint:"SELECT crop, COUNT(*) AS total FROM plots WHERE crop IS NOT NULL GROUP BY crop;",
-    solution:"SELECT crop, COUNT(*) AS total FROM plots WHERE crop IS NOT NULL GROUP BY crop;" },
-
-  { id:'thirsty-fields', tier:'Intermediate', title:'Field Drought Report', type:'select', visualMode:'legend', orderMatters:false,
-    concept:"<b>HAVING</b> filters *groups* after GROUP BY has collapsed them — WHERE filters individual rows before grouping happens; HAVING filters the summarized groups themselves, and can reference the aggregate directly.",
-    syntax:"SELECT column, COUNT(*) AS alias\nFROM table_name\nGROUP BY column\nHAVING alias > n;",
-    example:{ query:"SELECT fruit, COUNT(*) AS baskets FROM fruit_baskets GROUP BY fruit HAVING baskets > 1;", cols:['fruit','baskets'], rows:[['apples',3]],
-      note:"Pears only appeared in 1 basket, so its group got filtered out by HAVING — apples (3 baskets) made the cut." },
-    pitfall:"HAVING comes after GROUP BY in the query and can reference an aggregate like COUNT(*) directly — WHERE cannot do that.",
-    task:"Group plots by their field row, and find which rows have more than 2 plots at or below a water_level of 2. Return <code>row</code> and the count as <code>dry_plots</code>, only where <code>dry_plots &gt; 2</code>.",
-    hint:"SELECT row, COUNT(*) AS dry_plots FROM plots WHERE water_level <= 2 GROUP BY row HAVING dry_plots > 2;",
-    solution:"SELECT row, COUNT(*) AS dry_plots FROM plots WHERE water_level <= 2 GROUP BY row HAVING dry_plots > 2;" },
-
-  // ───────── ADVANCED ─────────
-  { id:'market-check', tier:'Advanced', title:'Market Check', type:'select', visualMode:'price-tag', idCol:0, priceCol:2, orderMatters:false,
-    concept:"A <b>JOIN</b> stitches two tables together on a shared key — here, <code>plots.crop</code> matches <code>crop_catalog.name</code> — so you can pull in data that actually lives in a different table. A JOIN only keeps rows with a match on both sides.",
-    syntax:"SELECT a.col, b.col\nFROM table_a a\nJOIN table_b b ON a.key = b.key;",
-    example:{ query:"SELECT harvest_log.crop, crop_catalog.market_price FROM harvest_log JOIN crop_catalog ON harvest_log.crop = crop_catalog.name;",
-      cols:['crop','market_price'], rows:[['wheat',2],['carrot',4]], note:"Each logged harvest is matched up with that crop's current market price from the other table." },
-    pitfall:"If a crop name is misspelled or missing in either table, that row finds no match and simply disappears from the results — no error, just a quiet gap.",
-    task:"Check today's market price for every planted plot. Join <code>plots</code> to <code>crop_catalog</code> on the crop name, returning <code>plots.id</code>, <code>plots.crop</code>, and <code>crop_catalog.market_price</code>.",
-    hint:"SELECT plots.id, plots.crop, crop_catalog.market_price FROM plots JOIN crop_catalog ON plots.crop = crop_catalog.name WHERE plots.crop IS NOT NULL;",
-    solution:"SELECT plots.id, plots.crop, crop_catalog.market_price FROM plots JOIN crop_catalog ON plots.crop = crop_catalog.name WHERE plots.crop IS NOT NULL;" },
-
-  { id:'full-inventory', tier:'Advanced', title:'Full Inventory', type:'select', visualMode:'price-tag', idCol:0, priceCol:2, orderMatters:false,
-    concept:"A plain JOIN drops rows with no match at all. <b>LEFT JOIN</b> keeps every row from the left-hand table regardless, filling in NULL wherever the right-hand table has nothing to offer.",
-    syntax:"SELECT a.col, b.col\nFROM table_a a\nLEFT JOIN table_b b ON a.key = b.key;",
-    example:{ query:"SELECT plot_notes.plot_id, plot_notes.crop, crop_catalog.market_price FROM plot_notes LEFT JOIN crop_catalog ON plot_notes.crop = crop_catalog.name;",
-      cols:['plot_id','crop','market_price'], rows:[[9,'wheat',2],[14,'squash',null]],
-      note:"Squash has no matching row in crop_catalog, but LEFT JOIN keeps it anyway — with market_price simply left as NULL." },
-    pitfall:"Swap this back to a plain JOIN and any unmatched row, like squash here, disappears from the results entirely.",
-    task:"List every plot's id and crop, including empty ones — this time keep every plot even without a matching <code>crop_catalog</code> entry. LEFT JOIN <code>plots</code> to <code>crop_catalog</code> on the crop name.",
-    hint:"SELECT plots.id, plots.crop, crop_catalog.market_price FROM plots LEFT JOIN crop_catalog ON plots.crop = crop_catalog.name;",
-    solution:"SELECT plots.id, plots.crop, crop_catalog.market_price FROM plots LEFT JOIN crop_catalog ON plots.crop = crop_catalog.name;" },
-
-  { id:'below-average', tier:'Advanced', title:'Below The Average', type:'select', visualMode:'highlight', idCol:0, orderMatters:false,
-    concept:"A <b>subquery</b> is a SELECT nested inside another statement — it runs first, and its single result gets used by the outer query's condition.",
-    syntax:"SELECT *\nFROM table_name\nWHERE column < (SELECT AVG(column) FROM table_name);",
-    example:{ query:"SELECT * FROM crop_catalog WHERE market_price < (SELECT AVG(market_price) FROM crop_catalog);",
-      cols:['name','emoji','market_price'], rows:[['corn','🌽',3],['wheat','🌾',2]],
-      note:"The inner query computes the average price (3.75) first; the outer query then keeps only rows below that number." },
-    pitfall:"This pattern only works cleanly when the subquery returns a single value — if it could return multiple rows, you'd need IN instead of a plain comparison.",
-    task:"Find every plot drier than the field average. Select every column where <code>water_level</code> is below the average water_level across all plots.",
-    hint:"SELECT * FROM plots WHERE water_level < (SELECT AVG(water_level) FROM plots);",
-    solution:"SELECT * FROM plots WHERE water_level < (SELECT AVG(water_level) FROM plots);" },
-
-  { id:'moisture-check', tier:'Advanced', title:'Moisture Report', type:'select', visualMode:'label-tag', idCol:0, labelCol:1, orderMatters:false,
-    concept:"<b>CASE WHEN ... THEN ... ELSE ... END</b> lets you turn raw values into readable labels right inside a query, checking conditions top to bottom and stopping at the first match.",
-    syntax:"SELECT column,\n  CASE WHEN cond1 THEN 'A'\n       WHEN cond2 THEN 'B'\n       ELSE 'C' END AS alias\nFROM table_name;",
-    example:{ query:"SELECT name, CASE WHEN market_price < 3 THEN 'Budget' ELSE 'Premium' END AS tier FROM crop_catalog;",
-      cols:['name','tier'], rows:[['corn','Premium'],['pumpkin','Premium'],['wheat','Budget'],['carrot','Premium']],
-      note:"Wheat is the only crop under $3, so it's the only one labeled Budget — everything else falls through to Premium." },
-    pitfall:"CASE evaluates its WHEN clauses in order and stops at the first true one — put your most specific conditions first.",
-    task:"Classify every plot's moisture: <code>water_level &lt; 2</code> → 'Low', <code>water_level &lt; 4</code> → 'Medium', otherwise → 'High'. Return <code>id</code> and the label as <code>moisture</code>.",
-    hint:"SELECT id, CASE WHEN water_level < 2 THEN 'Low' WHEN water_level < 4 THEN 'Medium' ELSE 'High' END AS moisture FROM plots;",
-    solution:"SELECT id, CASE WHEN water_level < 2 THEN 'Low' WHEN water_level < 4 THEN 'Medium' ELSE 'High' END AS moisture FROM plots;" },
-
-  // ───────── EXPERT ─────────
-  { id:'urgent-union', tier:'Expert', title:'The Urgent List', type:'select', visualMode:'label-tag', idCol:0, labelCol:1, orderMatters:false,
-    concept:"<b>UNION</b> stacks the results of two separate SELECT statements into one combined list of rows — unlike JOIN, which lines columns up side-by-side. Every SELECT in the chain must return the same number of columns.",
-    syntax:"SELECT colA FROM table WHERE cond1\nUNION\nSELECT colA FROM table WHERE cond2;",
-    example:{ query:"SELECT name, 'cheap' AS note FROM crop_catalog WHERE market_price < 3 UNION SELECT name, 'pricey' AS note FROM crop_catalog WHERE market_price >= 5;",
-      cols:['name','note'], rows:[['wheat','cheap'],['pumpkin','pricey']],
-      note:"Two independent SELECTs, each contributing rows to one stacked result — the output column names come from the first query." },
-    pitfall:"Column *count* must match across every UNION-ed SELECT — names and types don't have to, but a mismatched count throws an error.",
-    task:"Build a single 'needs attention' list: every plot that's ready to harvest OR critically dry (<code>water_level &lt; 2</code>), each tagged with why. Return <code>id</code> and a label — <code>'harvest'</code> for ready plots, <code>'water'</code> for dry ones — using UNION of two SELECTs.",
-    hint:"SELECT id, 'harvest' AS reason FROM plots WHERE stage = 'ready' UNION SELECT id, 'water' AS reason FROM plots WHERE water_level < 2;",
-    solution:"SELECT id, 'harvest' AS reason FROM plots WHERE stage = 'ready' UNION SELECT id, 'water' AS reason FROM plots WHERE water_level < 2;" },
-
-  { id:'drought-ranking', tier:'Expert', title:'Drought Ranking', type:'select', visualMode:'order-badge', idCol:0, badgeCol:2, orderMatters:true,
-    concept:"A <b>window function</b> like RANK() OVER (...) calculates something across a set of rows without collapsing them like GROUP BY does — every row keeps its own line, but gains a calculated column such as a rank.",
-    syntax:"SELECT column,\n  RANK() OVER (ORDER BY column ASC) AS alias\nFROM table_name;",
-    example:{ query:"SELECT name, market_price, RANK() OVER (ORDER BY market_price ASC) AS price_rank FROM crop_catalog;",
-      cols:['name','market_price','price_rank'], rows:[['wheat',2,1],['corn',3,2],['carrot',4,3],['pumpkin',6,4]],
-      note:"Every crop keeps its own row, but now carries a rank based on price, cheapest first." },
-    pitfall:"RANK() leaves gaps after ties (1, 1, 3, ...) — use DENSE_RANK() instead if you want consecutive numbers with no gaps.",
-    task:"Rank every plot by dryness — driest gets rank 1. Return <code>id</code>, <code>water_level</code>, and the rank as <code>drought_rank</code>, using <code>RANK() OVER (ORDER BY water_level ASC)</code>.",
-    hint:"SELECT id, water_level, RANK() OVER (ORDER BY water_level ASC) AS drought_rank FROM plots;",
-    solution:"SELECT id, water_level, RANK() OVER (ORDER BY water_level ASC) AS drought_rank FROM plots;" },
-
-  { id:'season-summary', tier:'Expert', title:'Season Summary', type:'select', visualMode:'legend', orderMatters:false,
-    concept:"A <b>CTE</b> (a WITH clause) names a temporary result set you can then query like a regular table — handy for breaking a complex question into clear, readable steps instead of one dense nested query.",
-    syntax:"WITH alias AS (\n  SELECT ... FROM table\n)\nSELECT * FROM alias WHERE condition;",
-    example:{ query:"WITH price_list AS (SELECT name, market_price FROM crop_catalog) SELECT * FROM price_list WHERE market_price > 3;",
-      cols:['name','market_price'], rows:[['pumpkin',6],['carrot',4]],
-      note:"price_list is computed once, then queried just like any other table in the very next line." },
-    pitfall:"A CTE only exists for the duration of that one statement — you can't reach back and reuse it in a separate, later query.",
-    task:"Using a CTE, first summarize crop counts (<code>crop</code>, <code>total</code>) from planted plots, then select only the crops planted in 2 or more plots from that summary.",
-    hint:"WITH crop_counts AS (SELECT crop, COUNT(*) AS total FROM plots WHERE crop IS NOT NULL GROUP BY crop) SELECT * FROM crop_counts WHERE total >= 2;",
-    solution:"WITH crop_counts AS (SELECT crop, COUNT(*) AS total FROM plots WHERE crop IS NOT NULL GROUP BY crop) SELECT * FROM crop_counts WHERE total >= 2;" },
-
-  { id:'clear-old-logs', tier:'Expert', title:'Clean The Archives', type:'mutate', visualMode:'log-delete', compareTable:'harvest_log',
-    concept:"<b>DELETE FROM table WHERE condition;</b> removes matching rows entirely — not just their values. Just like UPDATE, a DELETE with no WHERE clause wipes out the whole table.",
-    syntax:"DELETE FROM table_name\nWHERE condition;",
-    example:{ mutate:true, query:"DELETE FROM harvest_log WHERE day < 6;", cols:['plot_id','crop','day'],
-      before:[[9,'wheat',5],[12,'carrot',8]], after:[[12,'carrot',8]],
-      note:"The wheat entry (day 5) is gone completely; the carrot entry (day 8) doesn't match the condition, so it stays." },
-    pitfall:"DELETE removes whole rows, not values — to blank out just one column instead, use UPDATE ... SET column = NULL.",
-    task:"Clean up HQ's records: delete every <code>harvest_log</code> entry logged before day 6 (<code>day &lt; 6</code>).",
-    hint:"DELETE FROM harvest_log WHERE day < 6;", solution:"DELETE FROM harvest_log WHERE day < 6;" },
-];
-
-const BASE_XP = 100;
-const STORAGE_KEY = 'queryfarm-progress-v2';
-const CATALOG = { corn:{emoji:'🌽',price:3}, pumpkin:{emoji:'🎃',price:6}, wheat:{emoji:'🌾',price:2}, carrot:{emoji:'🥕',price:4} };
-const LABEL_COLORS = { Low:'#c98a52', Medium:'#e8b923', High:'#3fa7d6', harvest:'#ffb703', water:'#3fa7d6', Budget:'#8a8a8a', Premium:'#c98a06' };
-
-let SQLNS = null, db = null;
-let progress = { completed: [], xp: 0, coins: 0 };
-let currentIndex = 0;
-let hintShown = false;
-let decor = { mode:null };
-let stage = 'learn';
-let storageOk = true;
-
-function rankForXp(xp){
-  const total = LESSONS.length * BASE_XP;
-  if(xp >= total) return 'SQL SAGE';
-  if(xp >= BASE_XP*18) return 'MASTER FARMER';
-  if(xp >= BASE_XP*14) return 'RANCHER';
-  if(xp >= BASE_XP*6) return 'FARMHAND';
-  return 'GREENHORN';
-}
-async function loadProgress(){
-  try{
-    if(!window.storage){ storageOk=false; return; }
-    const res = await window.storage.get(STORAGE_KEY, false);
-    if(res && res.value) progress = JSON.parse(res.value);
-  }catch(e){ /* start fresh */ }
-}
-async function saveProgress(){
-  if(!storageOk || !window.storage) return;
-  try{
-    const result = await window.storage.set(STORAGE_KEY, JSON.stringify(progress), false);
-    if(!result) storageOk = false;
-  }catch(e){ storageOk = false; }
-}
-function esc(v){ if(v===null||v===undefined) return '<span style="color:#999">NULL</span>'; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2700); }
-
-function renderTopbar(){
-  document.getElementById('rankPill').textContent = rankForXp(progress.xp);
-  document.getElementById('coinLabel').textContent = progress.coins;
-  const pct = Math.min(100, Math.round((progress.xp % (BASE_XP*2)) / (BASE_XP*2) * 100));
-  document.getElementById('xpFill').style.width = pct+'%';
-  document.getElementById('xpLabel').textContent = progress.xp+' XP';
-  document.getElementById('missionsCount').textContent = progress.completed.length+'/'+LESSONS.length+' missions';
-  document.getElementById('missionsCount').title = storageOk ? 'Progress is saving automatically.' : "Progress isn't saving right now — it'll reset if you reload this page.";
-}
-
-function goToLesson(i){
-  currentIndex = i; hintShown=false; decor={mode:null};
-  stage = progress.completed.includes(LESSONS[i].id) ? 'try' : 'learn';
-  renderAll();
-}
-
-function renderMissionList(){
-  const wrap = document.getElementById('missionList'); wrap.innerHTML='';
-  let lastTier = null;
-  LESSONS.forEach((lesson,i)=>{
-    if(lesson.tier !== lastTier){
-      const h = document.createElement('div'); h.className='tier-header'; h.textContent = lesson.tier;
-      wrap.appendChild(h); lastTier = lesson.tier;
-    }
-    const solved = progress.completed.includes(lesson.id);
-    const unlocked = i===0 || progress.completed.includes(LESSONS[i-1].id);
-    const el = document.createElement('div');
-    el.className = 'mission-item'+(i===currentIndex?' active':'')+(!unlocked?' locked':'')+(solved?' solved':'');
-    el.innerHTML = `<div class="n">${i+1}</div><div class="t">${lesson.title}</div>${solved?'<div class="check">&#10003;</div>':''}`;
-    if(unlocked) el.addEventListener('click', ()=>goToLesson(i));
-    wrap.appendChild(el);
-  });
-}
-
-function schemaBlock(){
-  return `<div class="schema-box">
-    <b>plots</b>(id, row, col, crop, stage, water_level)<br>
-    <b>harvest_log</b>(id, plot_id, crop, day)<br>
-    <b>crop_catalog</b>(name, emoji, market_price)
-  </div>`;
-}
-function renderCatalogKey(){
-  const el = document.getElementById('catalogKey'); el.innerHTML='';
-  Object.entries(CATALOG).forEach(([name,c])=>{ const s=document.createElement('span'); s.textContent=`${c.emoji} ${name} $${c.price}`; el.appendChild(s); });
-}
-function tileEmoji(stg, crop){
-  if(stg==='empty') return '🟫';
-  if(stg==='seed') return '🌱';
-  if(stg==='sprout') return '🌿';
-  return (CATALOG[crop] && CATALOG[crop].emoji) || '❓';
-}
-function queryPlots(){
-  const res = db.exec('SELECT id,row,col,crop,stage,water_level FROM plots ORDER BY id;');
-  if(!res.length) return [];
-  return res[0].values.map(r=>({id:r[0],row:r[1],col:r[2],crop:r[3],stage:r[4],water_level:r[5]}));
-}
-function renderGrid(burstIds){
-  burstIds = burstIds || [];
-  const rows = queryPlots();
-  const grid = document.getElementById('grid'); grid.innerHTML='';
-  rows.forEach(p=>{
-    const tile = document.createElement('div');
-    let cls = 'tile';
-    if(p.water_level < 3 && p.stage !== 'empty') cls += ' thirsty';
-    if(p.stage === 'ready') cls += ' ready-glow';
-    if(decor.mode === 'highlight' && decor.ids && decor.ids.has(p.id)) cls += ' highlight';
-    if(decor.mode === 'pulse') cls += ' pulseall';
-    if(burstIds.includes(p.id)) cls += ' burst';
-    tile.className = cls;
-    tile.innerHTML = `<span>${tileEmoji(p.stage,p.crop)}</span><div class="waterbar"><i style="width:${Math.min(100,p.water_level*20)}%"></i></div>`;
-    if(decor.mode === 'order-badge' && decor.badges && decor.badges.has(p.id)){
-      const b=document.createElement('div'); b.className='badge'; b.textContent=decor.badges.get(p.id); tile.appendChild(b);
-    }
-    if(decor.mode === 'price-tag' && decor.prices && decor.prices.has(p.id)){
-      const price = decor.prices.get(p.id);
-      if(price !== null && price !== undefined){ const b=document.createElement('div'); b.className='pricetag'; b.textContent='$'+price; tile.appendChild(b); }
-    }
-    if(decor.mode === 'label-tag' && decor.labels && decor.labels.has(p.id)){
-      const label = decor.labels.get(p.id);
-      const b=document.createElement('div'); b.className='labeltag';
-      b.style.background = LABEL_COLORS[label] || '#8a8a8a'; b.textContent = label; tile.appendChild(b);
-    }
-    grid.appendChild(tile);
-  });
-}
-function renderReadout(){
-  const el = document.getElementById('readout');
-  if(decor.mode === 'summary' && decor.value !== undefined){
-    el.innerHTML = `<div class="summary-box"><div class="big">${esc(decor.value)}</div><div class="lbl">${esc(decor.label||'')}</div></div>`;
-  } else if(decor.mode === 'legend' && decor.rows){
-    el.innerHTML = `<div class="legend-box">${decor.rows.map(r=>`<div class="row"><span>${tileEmoji('grown',r[0])} ${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`;
-  } else {
-    el.innerHTML = `<div class="legend-box" style="opacity:0.6">Run a query to see results here.</div>`;
-  }
-}
-function renderLog(newIds){
-  newIds = newIds || [];
-  const res = db.exec('SELECT id, plot_id, crop, day FROM harvest_log ORDER BY id DESC LIMIT 4;');
-  const box = document.getElementById('logBox');
-  if(!res.length){ box.textContent = 'No reports filed yet.'; return; }
-  box.innerHTML = res[0].values.map(r=>{
-    const isNew = newIds.includes(r[0]);
-    return `<div class="entry${isNew?' new-entry':''}"><span>Plot #${r[1]} — ${esc(r[2])}</span><span>day ${esc(r[3])}</span></div>`;
-  }).join('');
-}
-
-function renderExampleBlock(lesson){
-  const ex = lesson.example;
-  if(!ex) return '';
-  if(ex.mutate){
-    return `
-      <div class="example-label">Worked Example</div>
-      <div class="example-query">${esc(ex.query)}</div>
-      <div class="ba-wrap" style="margin-top:8px;">
-        <div class="ba-col"><div class="ba-label">Before</div>${renderStaticTable(ex.cols, ex.before)}</div>
-        <div class="ba-col"><div class="ba-label">After</div>${renderStaticTable(ex.cols, ex.after)}</div>
-      </div>
-      <div class="example-note">${esc(ex.note)}</div>`;
-  }
-  return `
-    <div class="example-label">Worked Example</div>
-    <div class="example-query">${esc(ex.query)}</div>
-    ${renderStaticTable(ex.cols, ex.rows)}
-    <div class="example-note">${esc(ex.note)}</div>`;
-}
-function renderStaticTable(cols, rows){
-  const head = cols.map(c=>`<th>${esc(c)}</th>`).join('');
-  const body = rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('');
-  return `<div class="result-table-wrap"><table class="result"><tr>${head}</tr>${body}</table></div>`;
-}
-
-function renderLearn(){
-  const lesson = LESSONS[currentIndex];
-  const el = document.getElementById('missionDetail');
-  el.innerHTML = `
-    <div class="m-eyebrow"><span>Mission ${String(currentIndex+1).padStart(2,'0')} of ${LESSONS.length} — ${esc(lesson.tier)}</span></div>
-    <div class="learn-badge">📖 Learn First</div>
-    <h1 class="m-title">${lesson.title}</h1>
-    <div class="m-concept">${lesson.concept}</div>
-    <div class="syntax-box">${esc(lesson.syntax)}</div>
-    ${renderExampleBlock(lesson)}
-    <div class="pitfall-box"><b>⚠ Common pitfall —</b> ${lesson.pitfall}</div>
-    <button class="btn-learn" id="readyBtn">I'M READY — TRY IT &rarr;</button>
-  `;
-  document.getElementById('readyBtn').addEventListener('click', ()=>{ stage='try'; renderDetailStage(); });
-}
-
-function renderMission(){
-  const lesson = LESSONS[currentIndex];
-  const solved = progress.completed.includes(lesson.id);
-  const el = document.getElementById('missionDetail');
-  el.innerHTML = `
-    <div class="m-eyebrow">
-      <span>Mission ${String(currentIndex+1).padStart(2,'0')} of ${LESSONS.length} — ${esc(lesson.tier)}</span>
-      <button class="link-back" id="backBtn">‹ Review the lesson</button>
+    <!-- ACHIEVEMENTS MODAL -->
+    <div class="modal" id="achievementsModal">
+        <div class="modal-content">
+            <div class="modal-title">🏆 Achievements</div>
+            <div class="achievements-grid" id="achievementsGrid"></div>
+            <div class="modal-buttons">
+                <button onclick="toggleAchievements()" style="flex: 1;">Close</button>
+            </div>
+        </div>
     </div>
-    <h1 class="m-title">${lesson.title}</h1>
-    ${schemaBlock()}
-    <div class="task-box"><b>OBJECTIVE —</b><br>${lesson.task}</div>
-    <textarea id="editor" spellcheck="false" placeholder="Write your SQL command here...">${solved && lesson.type==='select' ? lesson.solution : ''}</textarea>
-    <div class="editor-row">
-      <button class="btn-run" id="runBtn">${lesson.type==='mutate' ? 'DEPLOY COMMAND' : 'RUN QUERY'}</button>
-      <button class="btn-hint" id="hintBtn">Need a hint?</button>
-      <button class="btn-next" id="nextBtn" style="display:none">${currentIndex<LESSONS.length-1?'NEXT MISSION &rarr;':'FINISH SEASON'}</button>
-    </div>
-    <div class="hint-text" id="hintText">${esc(lesson.hint)}</div>
-    <div class="output-area" id="output"></div>
-  `;
-  document.getElementById('backBtn').addEventListener('click', ()=>{ stage='learn'; renderDetailStage(); });
-  document.getElementById('runBtn').addEventListener('click', runQuery);
-  document.getElementById('hintBtn').addEventListener('click', ()=>{
-    hintShown = !hintShown; document.getElementById('hintText').style.display = hintShown?'block':'none';
-  });
-  const nextBtn = document.getElementById('nextBtn');
-  nextBtn.addEventListener('click', ()=>{
-    if(currentIndex < LESSONS.length-1) goToLesson(currentIndex+1); else showComplete();
-  });
-  if(solved) nextBtn.style.display = 'inline-block';
-  document.getElementById('editor').addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.metaKey||e.ctrlKey)) runQuery(); });
-}
-function renderDetailStage(){ if(stage==='learn') renderLearn(); else renderMission(); }
 
-function rowsEqual(a,b,orderMatters){
-  const norm = arr => arr.map(row=>row.map(v=>v===null?'NULL':String(v)));
-  let av=norm(a), bv=norm(b);
-  if(av.length!==bv.length) return false;
-  if(!orderMatters){ const key=r=>r.join('\u0001'); av=av.map(key).sort(); bv=bv.map(key).sort(); }
-  else { av=av.map(r=>r.join('\u0001')); bv=bv.map(r=>r.join('\u0001')); }
-  for(let i=0;i<av.length;i++) if(av[i]!==bv[i]) return false;
-  return true;
-}
-function diffTableIds(beforeRows, afterRows){
-  const beforeMap = new Map(beforeRows.map(r=>[r[0], JSON.stringify(r)]));
-  const changed = [];
-  afterRows.forEach(r=>{ if(beforeMap.get(r[0]) !== JSON.stringify(r)) changed.push(r[0]); });
-  return changed;
-}
-function newIdsOnly(beforeRows, afterRows){
-  const beforeIds = new Set(beforeRows.map(r=>r[0]));
-  return afterRows.filter(r=>!beforeIds.has(r[0])).map(r=>r[0]);
-}
+    <script>
+        // ===== GAME STATE =====
+        let gameState = {
+            currentMission: null,
+            missionsCompleted: 0,
+            correctAnswers: 0,
+            streak: 0,
+            difficulty: 'easy',
+            theme: 'farm',
+            queryHistory: [],
+            achievements: {},
+            communityChallenge: null
+        };
 
-async function runQuery(){
-  const lesson = LESSONS[currentIndex];
-  const editor = document.getElementById('editor');
-  const sql = editor.value.trim();
-  const out = document.getElementById('output');
-  if(!sql){ out.innerHTML = '<div class="error-text">The command console is empty. Write something first.</div>'; return; }
+        // ===== LOAD STATE =====
+        function loadGameState() {
+            const saved = localStorage.getItem('queryFarmState');
+            if (saved) {
+                gameState = JSON.parse(saved);
+                updateUI();
+                updateAchievementsUI();
+            } else {
+                initializeAchievements();
+                saveGameState();
+            }
+        }
 
-  if(lesson.type === 'mutate'){
-    let preBuffer, cloneUser, cloneSol;
-    try{ preBuffer = db.export(); }catch(e){ out.innerHTML='<div class="error-text">Could not snapshot the farm state.</div>'; return; }
-    try{ cloneUser = new SQLNS.Database(preBuffer); cloneUser.run(sql); }
-    catch(err){ out.innerHTML = `<div class="verdict fail">MISSION FAILED</div><div class="error-text">SQLite rejected the command:\n${esc(err.message)}</div>`; return; }
-    cloneSol = new SQLNS.Database(preBuffer); cloneSol.run(lesson.solution);
-    const t = lesson.compareTable;
-    const a = cloneUser.exec(`SELECT * FROM ${t} ORDER BY id;`);
-    const b = cloneSol.exec(`SELECT * FROM ${t} ORDER BY id;`);
-    const aRows = a.length ? a[0].values : [];
-    const bRows = b.length ? b[0].values : [];
-    if(!rowsEqual(aRows, bRows, true)){
-      out.innerHTML = `<div class="verdict fail">MISSION FAILED</div><div class="error-text">That command ran, but the farm ended up in the wrong state. Check your WHERE clause and the values you're setting.</div>`;
-      return;
-    }
-    const preRows = db.exec(`SELECT * FROM ${t} ORDER BY id;`);
-    const preRowsVals = preRows.length ? preRows[0].values : [];
-    db.run(lesson.solution);
-    if(!progress.completed.includes(lesson.id)){
-      progress.completed.push(lesson.id); progress.xp += BASE_XP;
-      let coinGain = Math.round(BASE_XP/10);
-      if(lesson.visualMode === 'harvest'){ coinGain += diffTableIds(preRowsVals, bRows).length * 10; }
-      progress.coins += coinGain; await saveProgress();
-      showToast('+'+coinGain+' 🌟 coins earned!');
-    }
-    if(lesson.visualMode === 'harvest'){
-      const changed = diffTableIds(preRowsVals, bRows);
-      decor = {mode:null}; renderGrid(changed);
-      setTimeout(()=>{ decor={mode:null}; renderGrid(); }, 850);
-    } else if(lesson.visualMode === 'log'){
-      const postRows = db.exec(`SELECT * FROM ${t} ORDER BY id;`);
-      const added = newIdsOnly(preRowsVals, postRows.length?postRows[0].values:[]);
-      renderLog(added); decor={mode:null}; renderGrid();
-    } else if(lesson.visualMode === 'log-delete'){
-      renderLog(); decor={mode:null}; renderGrid();
-      showToast('🗑️ Old reports cleared');
-    }
-    out.innerHTML = `<div class="verdict pass">MISSION COMPLETE</div><div class="mono" style="font-size:13px;color:var(--ink-soft)">The farm database has been updated.</div>`;
-    renderTopbar(); renderMissionList();
-    document.getElementById('nextBtn').style.display = 'inline-block';
-    return;
-  }
+        function saveGameState() {
+            localStorage.setItem('queryFarmState', JSON.stringify(gameState));
+        }
 
-  let userRes, solRes;
-  try{ userRes = db.exec(sql); }
-  catch(err){ out.innerHTML = `<div class="verdict fail">MISSION FAILED</div><div class="error-text">SQLite rejected the query:\n${esc(err.message)}</div>`; return; }
-  try{ solRes = db.exec(lesson.solution); }
-  catch(err){ out.innerHTML = `<div class="error-text">Internal error checking this mission.</div>`; return; }
+        // ===== ACHIEVEMENTS SYSTEM =====
+        const ACHIEVEMENTS = {
+            'first_query': { name: 'First Query', icon: '📝', condition: () => gameState.missionsCompleted >= 1 },
+            'ten_queries': { name: 'Persistent Learner', icon: '📚', condition: () => gameState.missionsCompleted >= 10 },
+            'perfect_streak_5': { name: 'On Fire', icon: '🔥', condition: () => gameState.streak >= 5 },
+            'perfect_streak_10': { name: 'Unstoppable', icon: '⚡', condition: () => gameState.streak >= 10 },
+            'switch_theme': { name: 'Decorator', icon: '🎨', condition: () => Object.keys(gameState.achievements).includes('switched_theme') },
+            'all_difficulties': { name: 'Master', icon: '👑', condition: () => ['easy', 'normal', 'hard'].every(d => gameState.achievements[`difficulty_${d}`]) },
+            'fifty_correct': { name: 'SQL Wizard', icon: '✨', condition: () => gameState.correctAnswers >= 50 },
+            'community_challenge': { name: 'Team Player', icon: '🤝', condition: () => gameState.achievements['community_challenge'] }
+        };
 
-  const uTable = userRes[userRes.length-1];
-  const sTable = solRes[solRes.length-1];
-  if(!uTable || !uTable.values || uTable.values.length===0){
-    out.innerHTML = `<div class="verdict fail">MISSION FAILED</div><div class="error-text">That query ran clean but returned no rows. Check your filter.</div>`;
-    return;
-  }
-  const match = rowsEqual(uTable.values, sTable.values, !!lesson.orderMatters);
-  const tableHtml = renderResultTable(uTable);
+        function initializeAchievements() {
+            Object.keys(ACHIEVEMENTS).forEach(key => {
+                gameState.achievements[key] = false;
+            });
+        }
 
-  if(match){
-    if(!progress.completed.includes(lesson.id)){
-      progress.completed.push(lesson.id); progress.xp += BASE_XP; progress.coins += Math.round(BASE_XP/10);
-      await saveProgress(); showToast('+'+Math.round(BASE_XP/10)+' 🌟 coins earned!');
-    }
-    applyVisual(lesson, uTable);
-    out.innerHTML = `<div class="verdict pass">MISSION COMPLETE</div>${tableHtml}`;
-    renderTopbar(); renderMissionList();
-    document.getElementById('nextBtn').style.display = 'inline-block';
-  } else {
-    out.innerHTML = `<div class="verdict fail">MISSION FAILED</div><div class="error-text">The query ran, but the results don't match the objective yet. Compare your output below.</div>${tableHtml}`;
-  }
-}
+        function checkAchievements() {
+            Object.keys(ACHIEVEMENTS).forEach(key => {
+                if (!gameState.achievements[key] && ACHIEVEMENTS[key].condition()) {
+                    gameState.achievements[key] = true;
+                    showMessage(`🏆 Achievement Unlocked: ${ACHIEVEMENTS[key].name}!`, 'success');
+                }
+            });
+        }
 
-function applyVisual(lesson, uTable){
-  const vals = uTable.values;
-  if(lesson.visualMode === 'pulse'){
-    decor = {mode:'pulse'}; renderGrid(); setTimeout(()=>{ decor={mode:null}; renderGrid(); }, 1000);
-  } else if(lesson.visualMode === 'highlight'){
-    decor = {mode:'highlight', ids:new Set(vals.map(r=>r[lesson.idCol]))}; renderGrid();
-  } else if(lesson.visualMode === 'order-badge'){
-    const badges = new Map();
-    vals.forEach((r,i)=>badges.set(r[lesson.idCol], lesson.badgeCol!==undefined ? r[lesson.badgeCol] : i+1));
-    decor = {mode:'order-badge', badges}; renderGrid();
-  } else if(lesson.visualMode === 'summary'){
-    decor = {mode:'summary', value:vals[0][0], label:lesson.summaryLabel}; renderGrid(); renderReadout();
-  } else if(lesson.visualMode === 'legend'){
-    decor = {mode:'legend', rows:vals}; renderGrid(); renderReadout();
-  } else if(lesson.visualMode === 'price-tag'){
-    const prices = new Map(); vals.forEach(r=>prices.set(r[lesson.idCol], r[lesson.priceCol]));
-    decor = {mode:'price-tag', prices}; renderGrid();
-  } else if(lesson.visualMode === 'label-tag'){
-    const labels = new Map(); vals.forEach(r=>labels.set(r[lesson.idCol], r[lesson.labelCol]));
-    decor = {mode:'label-tag', labels}; renderGrid();
-  }
-}
+        function updateAchievementsUI() {
+            const previewContainer = document.getElementById('achievementsPreview');
+            const gridContainer = document.getElementById('achievementsGrid');
 
-function renderResultTable(tbl){
-  if(!tbl || !tbl.columns) return '';
-  const head = tbl.columns.map(c=>`<th>${esc(c)}</th>`).join('');
-  const rows = tbl.values.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('');
-  return `<div class="result-table-wrap"><table class="result"><tr>${head}</tr>${rows}</table></div>`;
-}
+            let previewHTML = '';
+            let gridHTML = '';
 
-function showComplete(){
-  document.getElementById('missionDetail').innerHTML = `
-    <div class="journey-complete">
-      <div class="verdict pass" style="font-size:24px;">SEASON COMPLETE</div>
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:15px;max-width:520px;margin:16px auto;">
-        You've gone from a full-table scan to window functions and CTEs — filters, updates, aggregates, joins, subqueries, and more.
-        Final rank: <b>${rankForXp(progress.xp)}</b> at ${progress.xp} XP and ${progress.coins} coins.
-      </p>
-      <p class="mono" style="font-size:13px;color:var(--ink-soft);">Reopen any mission from the list to revisit it.</p>
-    </div>`;
-}
+            Object.keys(ACHIEVEMENTS).forEach((key, index) => {
+                const achievement = ACHIEVEMENTS[key];
+                const unlocked = gameState.achievements[key];
 
-function renderAll(){
-  renderTopbar(); renderMissionList(); renderDetailStage();
-  renderGrid(); renderReadout(); renderLog(); renderCatalogKey();
-}
+                if (index < 3) {
+                    previewHTML += `<span style="opacity: ${unlocked ? 1 : 0.3};">${achievement.icon}</span>`;
+                }
 
-async function seedDatabase(SQL){
-  db = new SQL.Database();
-  db.run(`
-    CREATE TABLE plots (id INTEGER PRIMARY KEY, row INTEGER, col INTEGER, crop TEXT, stage TEXT, water_level INTEGER);
-    INSERT INTO plots VALUES
-      (1,1,1,'corn','ready',4),(2,1,2,'corn','grown',2),(3,1,3,'pumpkin','ready',5),(4,1,4,NULL,'empty',0),(5,1,5,'wheat','sprout',1),
-      (6,2,1,'carrot','ready',3),(7,2,2,NULL,'empty',0),(8,2,3,'corn','grown',4),(9,2,4,'wheat','ready',2),(10,2,5,'pumpkin','seed',1),
-      (11,3,1,NULL,'empty',0),(12,3,2,'carrot','grown',5),(13,3,3,'corn','sprout',2),(14,3,4,'wheat','grown',1),(15,3,5,NULL,'empty',0),
-      (16,4,1,'pumpkin','ready',4),(17,4,2,'carrot','seed',2),(18,4,3,NULL,'empty',0),(19,4,4,'corn','ready',3),(20,4,5,'wheat','sprout',0);
+                gridHTML += `
+                    <div class="achievement ${unlocked ? 'unlocked' : ''}">
+                        <div class="achievement-icon">${achievement.icon}</div>
+                        <div class="achievement-name">${achievement.name}</div>
+                        <div class="achievement-tooltip">${unlocked ? '✓ Unlocked' : 'Locked'}</div>
+                    </div>
+                `;
+            });
 
-    CREATE TABLE harvest_log (id INTEGER PRIMARY KEY, plot_id INTEGER, crop TEXT, day INTEGER);
-    INSERT INTO harvest_log VALUES (1,9,'wheat',5),(2,12,'carrot',8);
+            previewContainer.innerHTML = previewHTML;
+            gridContainer.innerHTML = gridHTML;
+        }
 
-    CREATE TABLE crop_catalog (name TEXT PRIMARY KEY, emoji TEXT, market_price INTEGER);
-    INSERT INTO crop_catalog VALUES ('corn','🌽',3),('pumpkin','🎃',6),('wheat','🌾',2),('carrot','🥕',4);
-  `);
-}
+        // ===== DIFFICULTY & MISSIONS =====
+        const LESSONS = {
+            easy: [
+                {
+                    title: 'SELECT from Table',
+                    description: 'Retrieve all customers from the CUSTOMERS table.',
+                    table: 'CUSTOMERS',
+                    data: [{ id: 1, name: 'Alice', email: 'alice@farm.com' }, { id: 2, name: 'Bob', email: 'bob@farm.com' }],
+                    expectedQuery: 'SELECT * FROM CUSTOMERS',
+                    realWorldExample: 'A farmer wants to see all registered customers in their database.',
+                    crop: '🌱'
+                },
+                {
+                    title: 'WHERE Clause',
+                    description: 'Find customers named Alice.',
+                    table: 'CUSTOMERS',
+                    data: [{ id: 1, name: 'Alice', email: 'alice@farm.com' }, { id: 2, name: 'Bob', email: 'bob@farm.com' }],
+                    expectedQuery: 'SELECT * FROM CUSTOMERS WHERE name = \'Alice\'',
+                    realWorldExample: 'Find a specific customer\'s records by their name.',
+                    crop: '🌿'
+                },
+                {
+                    title: 'ORDER BY',
+                    description: 'List all products ordered by price (ascending).',
+                    table: 'PRODUCTS',
+                    data: [{ name: 'Corn', price: 5 }, { name: 'Wheat', price: 3 }, { name: 'Barley', price: 4 }],
+                    expectedQuery: 'SELECT * FROM PRODUCTS ORDER BY price ASC',
+                    realWorldExample: 'Sort products by price to show the cheapest first.',
+                    crop: '🌾'
+                }
+            ],
+            normal: [
+                {
+                    title: 'JOIN Tables',
+                    description: 'Find which customers bought which products.',
+                    tables: ['CUSTOMERS', 'ORDERS', 'PRODUCTS'],
+                    expectedQuery: 'SELECT c.name, p.name FROM CUSTOMERS c JOIN ORDERS o ON c.id = o.customer_id JOIN PRODUCTS p ON o.product_id = p.id',
+                    realWorldExample: 'Link customers to their purchases and show product names.',
+                    crop: '🌽'
+                },
+                {
+                    title: 'GROUP BY & COUNT',
+                    description: 'Count how many products each customer has ordered.',
+                    tables: ['CUSTOMERS', 'ORDERS'],
+                    expectedQuery: 'SELECT c.name, COUNT(o.id) FROM CUSTOMERS c LEFT JOIN ORDERS o ON c.id = o.customer_id GROUP BY c.id, c.name',
+                    realWorldExample: 'Identify top customers based on order count.',
+                    crop: '🥕'
+                },
+                {
+                    title: 'Aggregate Functions',
+                    description: 'Find the average price of all products.',
+                    table: 'PRODUCTS',
+                    expectedQuery: 'SELECT AVG(price) FROM PRODUCTS',
+                    realWorldExample: 'Calculate average product pricing for budgeting.',
+                    crop: '🥔'
+                }
+            ],
+            hard: [
+                {
+                    title: 'Subqueries',
+                    description: 'Find customers who spent more than the average order value.',
+                    tables: ['CUSTOMERS', 'ORDERS'],
+                    expectedQuery: 'SELECT c.name FROM CUSTOMERS c WHERE c.id IN (SELECT customer_id FROM ORDERS WHERE total > (SELECT AVG(total) FROM ORDERS))',
+                    realWorldExample: 'Identify high-value customers for targeted marketing.',
+                    crop: '🍅'
+                },
+                {
+                    title: 'Window Functions',
+                    description: 'Rank customers by total spending.',
+                    tables: ['CUSTOMERS', 'ORDERS'],
+                    expectedQuery: 'SELECT c.name, SUM(o.total) as total_spent, RANK() OVER (ORDER BY SUM(o.total) DESC) FROM CUSTOMERS c JOIN ORDERS o ON c.id = o.customer_id GROUP BY c.id, c.name',
+                    realWorldExample: 'Rank customers to identify VIPs.',
+                    crop: '🍂'
+                }
+            ]
+        };
 
-(async function init(){
-  await loadProgress();
-  try{
-    SQLNS = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
-    await seedDatabase(SQLNS);
-    let start = LESSONS.length - 1;
-    for(let i=0;i<LESSONS.length;i++){ if(!progress.completed.includes(LESSONS[i].id)){ start = i; break; } }
-    currentIndex = start;
-    stage = progress.completed.includes(LESSONS[start].id) ? 'try' : 'learn';
-    renderAll();
-  }catch(err){
-    document.getElementById('missionDetail').innerHTML = `<div class="error-text">Failed to load the SQLite engine: ${esc(err.message)}. Check your connection and reload.</div>`;
-  }
-})();
-</script>
+        function setDifficulty(level) {
+            gameState.difficulty = level;
+            gameState.achievements[`difficulty_${level}`] = true;
+            saveGameState();
+            updateDifficultyUI();
+            generateMission();
+        }
+
+        function updateDifficultyUI() {
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.difficulty-btn.${gameState.difficulty}`).classList.add('active');
+        }
+
+        function generateMission() {
+            const lessons = LESSONS[gameState.difficulty];
+            gameState.currentMission = lessons[Math.floor(Math.random() * lessons.length)];
+            renderMission();
+        }
+
+        function renderMission() {
+            if (!gameState.currentMission) return;
+
+            const mission = gameState.currentMission;
+            let html = `
+                <div class="mission">
+                    <div class="mission-title">${mission.title}</div>
+                    <div class="mission-description">${mission.description}</div>
+                    ${mission.realWorldExample ? `<div class="real-world-example">💼 Real World: ${mission.realWorldExample}</div>` : ''}
+                </div>
+            `;
+
+            document.getElementById('gameField').innerHTML = html;
+        }
+
+        // ===== THEME SYSTEM =====
+        function setTheme(theme) {
+            gameState.theme = theme;
+            gameState.achievements['switched_theme'] = true;
+            document.body.className = `theme-${theme}`;
+            
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.theme-btn.${theme}`).classList.add('active');
+
+            saveGameState();
+            checkAchievements();
+        }
+
+        // ===== SQL AUTO-COMPLETE =====
+        const SQL_KEYWORDS = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER BY', 'GROUP BY', 'JOIN', 'LEFT JOIN', 'COUNT', 'AVG', 'SUM', 'MAX', 'MIN', 'LIMIT', 'INSERT', 'UPDATE', 'DELETE'];
+        const SQL_TABLES = ['CUSTOMERS', 'PRODUCTS', 'ORDERS', 'USERS', 'ITEMS'];
+
+        document.getElementById('sqlInput').addEventListener('input', function(e) {
+            const value = this.value.toUpperCase();
+            const autocompleteList = document.getElementById('autocompleteList');
+
+            if (value.length === 0) {
+                autocompleteList.style.display = 'none';
+                return;
+            }
+
+            const suggestions = [...SQL_KEYWORDS, ...SQL_TABLES].filter(item => item.includes(value)).slice(0, 5);
+
+            if (suggestions.length === 0) {
+                autocompleteList.style.display = 'none';
+                return;
+            }
+
+            autocompleteList.innerHTML = suggestions.map((item, idx) =>
+                `<div class="autocomplete-item" onclick="insertSuggestion('${item}')">${item}</div>`
+            ).join('');
+
+            autocompleteList.style.display = 'block';
+        });
+
+        function insertSuggestion(text) {
+            const input = document.getElementById('sqlInput');
+            const cursorPos = input.selectionStart;
+            const value = input.value;
+            const lastSpacePos = value.lastIndexOf(' ', cursorPos);
+            const start = lastSpacePos + 1;
+            input.value = value.substring(0, start) + text + value.substring(cursorPos);
+            input.focus();
+            document.getElementById('autocompleteList').style.display = 'none';
+        }
+
+        // ===== QUERY HISTORY =====
+        function addToHistory(query) {
+            gameState.queryHistory.unshift(query);
+            gameState.queryHistory = gameState.queryHistory.slice(0, 20);
+            updateHistoryUI();
+            saveGameState();
+        }
+
+        function updateHistoryUI() {
+            const historyContainer = document.getElementById('queryHistory');
+            if (gameState.queryHistory.length === 0) {
+                historyContainer.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">No queries yet...</div>';
+                return;
+            }
+
+            historyContainer.innerHTML = gameState.queryHistory.map((query, idx) => `
+                <div class="history-item" onclick="document.getElementById('sqlInput').value = '${query.replace(/'/g, "\\'")}'">${query.substring(0, 40)}${query.length > 40 ? '...' : ''}</div>
+            `).join('');
+        }
+
+        // ===== QUERY VALIDATION =====
+        function submitQuery() {
+            const query = document.getElementById('sqlInput').value.trim();
+
+            if (!query) {
+                showMessage('❌ Please enter a SQL query.', 'error');
+                return;
+            }
+
+            addToHistory(query);
+
+            if (!gameState.currentMission) {
+                showMessage('❌ No active mission. Please generate a new mission.', 'error');
+                return;
+            }
+
+            const mission = gameState.currentMission;
+            const expectedKeywords = mission.expectedQuery.split(/\s+/).filter(w => w.length > 3);
+            const queryKeywords = query.toUpperCase().split(/\s+/).filter(w => w.length > 3);
+
+            const hasKeywords = expectedKeywords.some(keyword => queryKeywords.includes(keyword));
+
+            if (hasKeywords) {
+                gameState.missionsCompleted++;
+                gameState.correctAnswers++;
+                gameState.streak++;
+                showMessage(`✅ Correct! Your SQL query was valid! ${mission.crop}`, 'success');
+                
+                const field = document.getElementById('gameField');
+                field.innerHTML += `<div class="crop">${mission.crop}</div>`;
+
+                setTimeout(() => {
+                    document.getElementById('sqlInput').value = '';
+                    generateMission();
+                    updateStatsUI();
+                    checkAchievements();
+                    saveGameState();
+                }, 1500);
+            } else {
+                gameState.streak = 0;
+                showMessage('❌ Query structure doesn\'t match. Try using: ' + mission.expectedQuery.split(' ').slice(0, 3).join(' '), 'error');
+                saveGameState();
+            }
+        }
+
+        function skipMission() {
+            gameState.streak = 0;
+            generateMission();
+            document.getElementById('sqlInput').value = '';
+            updateStatsUI();
+            saveGameState();
+        }
+
+        // ===== UI UPDATES =====
+        function updateStatsUI() {
+            document.getElementById('missionCount').textContent = gameState.missionsCompleted;
+            document.getElementById('correctCount').textContent = gameState.correctAnswers;
+            document.getElementById('streakCount').textContent = gameState.streak;
+        }
+
+        function updateUI() {
+            updateDifficultyUI();
+            updateHistoryUI();
+            updateStatsUI();
+            updateAchievementsUI();
+            setTheme(gameState.theme);
+            generateMission();
+        }
+
+        function showMessage(text, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const messageId = Date.now();
+            const html = `<div class="message ${type}" id="msg-${messageId}">${text}</div>`;
+            container.insertAdjacentHTML('beforeend', html);
+
+            setTimeout(() => {
+                const element = document.getElementById(`msg-${messageId}`);
+                if (element) element.remove();
+            }, 4000);
+        }
+
+        // ===== MODAL CONTROLS =====
+        function toggleSettings() {
+            document.getElementById('settingsModal').classList.toggle('active');
+        }
+
+        function toggleAchievements() {
+            document.getElementById('achievementsModal').classList.toggle('active');
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure? This will reset all progress.')) {
+                localStorage.removeItem('queryFarmState');
+                location.reload();
+            }
+        }
+
+        // ===== INITIALIZE =====
+        loadGameState();
+        generateMission();
+        updateHistoryUI();
+
+        // ENTER KEY SUPPORT
+        document.getElementById('sqlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitQuery();
+        });
+    </script>
 </body>
 </html>
-HTMLEOF
-echo "written"
