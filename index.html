@@ -266,6 +266,101 @@
             color: var(--text-color);
         }
 
+        /* ===== FARM GRID ===== */
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            background: var(--field-bg);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .farm-tile {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 6px;
+            background: linear-gradient(160deg, #a9754f, #7a5233);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
+        }
+        .farm-tile.thirsty::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 6px;
+            background: repeating-linear-gradient(45deg, #c98a52 0 2px, transparent 2px 8px);
+            opacity: 0.35;
+            pointer-events: none;
+        }
+        .farm-tile .waterbar {
+            position: absolute;
+            bottom: 3px; left: 4px; right: 4px; height: 4px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .farm-tile .waterbar i { display: block; height: 100%; background: #3fa7d6; }
+        .farm-tile.ready-glow {
+            box-shadow: 0 0 0 3px #fbbf24, inset 0 -3px 0 rgba(0,0,0,0.25);
+            animation: bob 1.6s ease-in-out infinite;
+        }
+        @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        .farm-tile.highlight { animation: pulseGold 1.1s ease-in-out infinite; z-index: 2; }
+        @keyframes pulseGold {
+            0%, 100% { box-shadow: 0 0 0 3px #fbbf24; }
+            50% { box-shadow: 0 0 0 3px #fbbf24, 0 0 14px 4px #fbbf24; }
+        }
+        .farm-tile.burst { animation: burstAnim 0.8s ease-out; }
+        @keyframes burstAnim {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.25); filter: brightness(1.6); }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== ECONOMY BAR ===== */
+        .economy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .economy-box {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        .economy-box .val { font-size: 18px; font-weight: 700; color: var(--primary); }
+        .economy-box .lbl { font-size: 10px; color: var(--text-secondary); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+        .farm-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .farm-actions button { flex: 1; min-width: 110px; }
+
+        /* ===== MULTI-LINE SQL EDITORS ===== */
+        textarea.sql-input {
+            width: 100%;
+            min-height: 90px;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        textarea.sql-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+        .editor-hint { font-size: 11px; color: var(--text-secondary); margin: 4px 0 10px; }
+
         .story-section {
             background: var(--bg-primary);
             border-radius: 12px;
@@ -783,6 +878,34 @@
                 </div>
             </div>
 
+            <!-- FARM GRID -->
+            <div class="card">
+                <div class="card-title">🚜 Your Farm — lives across visits, driven by real SQL</div>
+                <div class="economy-grid">
+                    <div class="economy-box"><div class="val" id="coinsVal">0</div><div class="lbl">🌟 Coins</div></div>
+                    <div class="economy-box"><div class="val" id="plotsVal">0</div><div class="lbl">🟫 Plots</div></div>
+                    <div class="economy-box"><div class="val" id="invVal">0</div><div class="lbl">🎒 Inventory</div></div>
+                    <div class="economy-box"><div class="val" id="dayVal">1</div><div class="lbl">☀️ Day</div></div>
+                </div>
+                <div class="farm-grid" id="farmGrid"></div>
+                <div id="inventoryList" style="font-size:12px;color:var(--text-secondary);margin:10px 0;font-family:'Courier New',monospace;"></div>
+                <div class="farm-actions" style="margin-top:6px;">
+                    <button onclick="nextDay()">☀️ Next Day</button>
+                    <button class="secondary" onclick="plantEmpty()">🌱 Plant Empty (2🌟/plot)</button>
+                    <button class="secondary" onclick="sellAll()">💰 Sell All</button>
+                    <button class="outline" id="buyPlotBtn" onclick="buyPlot()" style="border-color: var(--primary); color: var(--text-primary);">🧱 Buy Plot</button>
+                </div>
+            </div>
+
+            <!-- BUSINESS: OPEN ORDERS -->
+            <div class="card">
+                <div class="card-title">💼 Open Orders</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
+                    Customers pay better than the open market — but orders expire if you sit on them too long. Selling to a customer beats Sell All when you can cover the quantity.
+                </div>
+                <div id="ordersList"></div>
+            </div>
+
             <!-- GAME FIELD -->
             <div class="card">
                 <div class="card-title">🎯 Mission</div>
@@ -793,11 +916,24 @@
             <div class="card">
                 <div class="card-title">💻 SQL Query</div>
                 <div class="sql-input-wrapper">
-                    <input type="text" id="sqlInput" class="sql-input" placeholder="Write your SQL query here..." autocomplete="off">
+                    <textarea id="sqlInput" class="sql-input" placeholder="Write your SQL query here...&#10;(multiple lines welcome — Ctrl/Cmd+Enter to run)" autocomplete="off" spellcheck="false"></textarea>
                     <div class="autocomplete-list" id="autocompleteList" style="display: none;"></div>
                 </div>
+                <div class="editor-hint">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to submit without leaving the keyboard.</div>
                 <button onclick="submitQuery()" style="width: 100%; margin-bottom: 10px;">✓ Submit Query</button>
                 <button class="outline" onclick="skipMission()" style="width: 100%;">⏭️ Skip Mission</button>
+            </div>
+
+            <!-- FREE-PLAY CONSOLE -->
+            <div class="card" style="border-top: 3px solid var(--accent);">
+                <div class="card-title">🕹️ Farm Console — free play, any SQL</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+                    Once you've learned a technique, use it here anytime to manage your farm directly — no mission required.
+                    Tables: <code>plots(id, row, col, crop, stage, water_level)</code>, <code>crop_catalog(name, emoji, market_price, seed_cost)</code>, <code>harvest_log(id, plot_id, crop, day)</code>.
+                </div>
+                <textarea id="freeInput" class="sql-input" placeholder="e.g. SELECT * FROM plots WHERE stage = 'ready';" spellcheck="false"></textarea>
+                <button onclick="runFreeQuery()" style="width: 100%; margin-top: 10px;">▶ Run On My Farm</button>
+                <div id="freeResult"></div>
             </div>
 
             <!-- MESSAGES -->
@@ -833,10 +969,11 @@
             <div class="card" style="border-top: 3px solid var(--primary);">
                 <div class="card-title">💡 Tips</div>
                 <div style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
-                    <p>• Use SELECT to retrieve data</p>
-                    <p>• WHERE filters results</p>
-                    <p>• ORDER BY sorts results</p>
-                    <p>• JOIN combines tables</p>
+                    <p>• SELECT finds plots, WHERE narrows them down</p>
+                    <p>• UPDATE actually harvests or waters — for real</p>
+                    <p>• Harvested crops go to your inventory — Sell All for coins</p>
+                    <p>• Buy Plot expands your farm permanently</p>
+                    <p>• Next Day grows crops and dries out water</p>
                 </div>
             </div>
         </div>
@@ -921,8 +1058,341 @@
             queryHistory: [],
             achievements: {},
             storyProgress: 0,
-            totalScore: 0
+            totalScore: 0,
+            stage: 'lesson',                      // 'lesson' | 'challenge' | 'level-complete'
+            progress: { easy: 0, normal: 0, hard: 0 },  // index of next lesson within each level
+            coins: 50,
+            inventory: {},
+            day: 1
         };
+
+        // ===== REAL SQL ENGINE (sql.js / SQLite compiled to WASM) =====
+        // Everything below actually executes in a real SQLite database in the browser —
+        // queries are checked by running them and comparing real result sets, not by
+        // guessing from keywords. The farm's tables persist across visits (see
+        // saveDbState/loadDbState below), so the farm you grow is still there next time.
+        let SQLNS = null, db = null, dbReady = false;
+        const DB_STORAGE_KEY = 'queryFarmDB';
+        const CATALOG = {
+            corn:   { emoji: '🌽', market_price: 5, seed_cost: 2 },
+            wheat:  { emoji: '🌾', market_price: 3, seed_cost: 1 },
+            barley: { emoji: '🌿', market_price: 4, seed_cost: 2 },
+            pumpkin:{ emoji: '🎃', market_price: 8, seed_cost: 3 }
+        };
+
+        function u8ToBase64(u8) {
+            let s = '';
+            for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+            return btoa(s);
+        }
+        function base64ToU8(b64) {
+            const s = atob(b64);
+            const u8 = new Uint8Array(s.length);
+            for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+            return u8;
+        }
+        function saveDbState() {
+            try { localStorage.setItem(DB_STORAGE_KEY, u8ToBase64(db.export())); }
+            catch (e) { console.warn('Could not save farm state', e); }
+        }
+        function loadDbState() {
+            try {
+                const saved = localStorage.getItem(DB_STORAGE_KEY);
+                return saved ? base64ToU8(saved) : null;
+            } catch (e) { return null; }
+        }
+
+        function seedFreshFarm() {
+            db.run(`
+                CREATE TABLE plots (id INTEGER PRIMARY KEY, row INTEGER, col INTEGER, crop TEXT, stage TEXT, water_level INTEGER);
+                INSERT INTO plots (row, col, crop, stage, water_level) VALUES
+                    (1,1,'corn','ready',4),(1,2,'corn','grown',2),(1,3,'pumpkin','ready',5),(1,4,NULL,'empty',0),(1,5,'wheat','sprout',1),
+                    (2,1,'barley','ready',3),(2,2,NULL,'empty',0),(2,3,'corn','grown',4),(2,4,'wheat','ready',2),(2,5,'pumpkin','seed',1),
+                    (3,1,NULL,'empty',0),(3,2,'barley','grown',5),(3,3,'corn','sprout',2),(3,4,'wheat','grown',1),(3,5,NULL,'empty',0),
+                    (4,1,'pumpkin','ready',4),(4,2,'barley','seed',2),(4,3,NULL,'empty',0),(4,4,'corn','ready',3),(4,5,'wheat','sprout',0);
+
+                CREATE TABLE crop_catalog (name TEXT PRIMARY KEY, emoji TEXT, market_price INTEGER, seed_cost INTEGER);
+                INSERT INTO crop_catalog VALUES
+                    ('corn','🌽',5,2), ('wheat','🌾',3,1), ('barley','🌿',4,2), ('pumpkin','🎃',8,3);
+
+                CREATE TABLE harvest_log (id INTEGER PRIMARY KEY, plot_id INTEGER, crop TEXT, day INTEGER);
+                INSERT INTO harvest_log (plot_id, crop, day) VALUES (9,'wheat',1),(16,'pumpkin',1);
+            `);
+            seedBusinessTables();
+        }
+
+        // Customers place standing orders that pay better than the generic market —
+        // fulfilling them (instead of just Sell All) is the core "run a business" loop.
+        function seedBusinessTables() {
+            db.run(`
+                CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, favorite_crop TEXT);
+                INSERT INTO customers (name, favorite_crop) VALUES
+                    ('Maple Diner','corn'), ('Riverside Market','wheat'),
+                    ('Old Mill Bakery','wheat'), ('Sunset Grocers','pumpkin');
+
+                CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, crop TEXT, quantity INTEGER, price_per_unit INTEGER, status TEXT, day_placed INTEGER);
+                INSERT INTO orders (customer_id, crop, quantity, price_per_unit, status, day_placed) VALUES
+                    (1,'corn',3,7,'open',1), (2,'wheat',5,4,'open',1), (4,'pumpkin',2,10,'open',1);
+            `);
+        }
+
+        // If a farm was saved before the business tables existed, add them on top
+        // without touching any of the player's existing progress.
+        function ensureBusinessTables() {
+            const res = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='customers';");
+            if (!res.length || !res[0].values.length) seedBusinessTables();
+        }
+
+        async function initDatabase() {
+            SQLNS = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
+            const savedBytes = loadDbState();
+            if (savedBytes) {
+                try { db = new SQLNS.Database(savedBytes); ensureBusinessTables(); }
+                catch (e) { db = new SQLNS.Database(); seedFreshFarm(); }
+            } else {
+                db = new SQLNS.Database();
+                seedFreshFarm();
+            }
+            dbReady = true;
+            saveDbState();
+        }
+
+        // Detects plots that just went from "growing something" to "empty" (i.e. were
+        // harvested) by comparing table snapshots, and credits the harvested crop to
+        // inventory. Works whether the UPDATE came from a mission or the free-play console.
+        function creditHarvestFromDiff(beforeRows, afterRows) {
+            const beforeMap = new Map(beforeRows.map(r => [r[0], r])); // id -> row [id,row,col,crop,stage,water_level]
+            let harvestedCount = 0;
+            afterRows.forEach(r => {
+                const prev = beforeMap.get(r[0]);
+                if (prev && prev[3] && (!r[3] || r[4] === 'empty') && prev[4] !== 'empty') {
+                    const cropName = prev[3];
+                    gameState.inventory[cropName] = (gameState.inventory[cropName] || 0) + 1;
+                    harvestedCount++;
+                }
+            });
+            return harvestedCount;
+        }
+
+        function rowsEqual(a, b, orderMatters) {
+            const norm = arr => arr.map(row => row.map(v => (v === null ? 'NULL' : String(v))));
+            let av = norm(a), bv = norm(b);
+            if (av.length !== bv.length) return false;
+            if (!orderMatters) {
+                const key = r => r.join('\u0001');
+                av = av.map(key).sort();
+                bv = bv.map(key).sort();
+            } else {
+                av = av.map(r => r.join('\u0001'));
+                bv = bv.map(r => r.join('\u0001'));
+            }
+            for (let i = 0; i < av.length; i++) if (av[i] !== bv[i]) return false;
+            return true;
+        }
+
+        function renderResultTable(res) {
+            if (!res || !res.length) return '<div style="font-size:13px;color:var(--text-secondary);">(no rows returned)</div>';
+            const t = res[0];
+            const head = t.columns.map(c => `<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);">${c}</th>`).join('');
+            const rows = t.values.map(r => `<tr>${r.map(v => `<td style="padding:4px 8px;border-bottom:1px solid var(--border-color);">${v === null ? '<i>NULL</i>' : v}</td>`).join('')}</tr>`).join('');
+            return `<div style="overflow-x:auto;margin-top:10px;"><table style="border-collapse:collapse;width:100%;font-family:'Courier New',monospace;font-size:13px;"><tr>${head}</tr>${rows}</table></div>`;
+        }
+
+        // ===== FARM GRID + ECONOMY =====
+        function tileEmoji(stage, crop) {
+            if (stage === 'empty' || !crop) return '🟫';
+            if (stage === 'seed') return '🌱';
+            if (stage === 'sprout') return '🌿';
+            return (CATALOG[crop] && CATALOG[crop].emoji) || '❓';
+        }
+
+        function getPlots() {
+            if (!dbReady) return [];
+            const res = db.exec('SELECT id, row, col, crop, stage, water_level FROM plots ORDER BY id;');
+            return res.length ? res[0].values : [];
+        }
+
+        function renderFarm(burstIds, highlightIds) {
+            if (!dbReady) return;
+            burstIds = burstIds || [];
+            highlightIds = highlightIds || [];
+            const plots = getPlots();
+            const grid = document.getElementById('farmGrid');
+            grid.innerHTML = '';
+            plots.forEach(p => {
+                const [id, row, col, crop, stage, water] = p;
+                let cls = 'farm-tile';
+                if (water < 3 && stage !== 'empty') cls += ' thirsty';
+                if (stage === 'ready') cls += ' ready-glow';
+                if (burstIds.includes(id)) cls += ' burst';
+                if (highlightIds.includes(id)) cls += ' highlight';
+                const tile = document.createElement('div');
+                tile.className = cls;
+                tile.title = `Plot #${id} — ${crop || 'empty'} (${stage}), water ${water}`;
+                tile.innerHTML = `<span>${tileEmoji(stage, crop)}</span><div class="waterbar"><i style="width:${Math.min(100, water * 20)}%"></i></div>`;
+                grid.appendChild(tile);
+            });
+            renderEconomy(plots);
+        }
+
+        function renderEconomy(plots) {
+            document.getElementById('coinsVal').textContent = gameState.coins;
+            document.getElementById('plotsVal').textContent = plots.length;
+            const invTotal = Object.values(gameState.inventory).reduce((a, b) => a + b, 0);
+            document.getElementById('invVal').textContent = invTotal;
+            document.getElementById('dayVal').textContent = gameState.day;
+            const invList = document.getElementById('inventoryList');
+            const entries = Object.entries(gameState.inventory).filter(([, n]) => n > 0);
+            invList.innerHTML = entries.length
+                ? entries.map(([crop, n]) => `${(CATALOG[crop] && CATALOG[crop].emoji) || crop} ${crop} ×${n}`).join('&nbsp;&nbsp;')
+                : '<i style="opacity:.6">Inventory empty — harvest some ready plots!</i>';
+            const buyBtn = document.getElementById('buyPlotBtn');
+            if (buyBtn) buyBtn.textContent = `🧱 Buy Plot (${plotCost(plots.length)}🌟)`;
+            renderOrders();
+        }
+
+        function plotCost(currentCount) { return 20 + currentCount * 5; }
+        function upkeepCost(plotCount) { return Math.ceil(plotCount * 0.5); }
+
+        // ===== BUSINESS: CUSTOMERS & ORDERS =====
+        function getOpenOrders() {
+            if (!dbReady) return [];
+            const res = db.exec(`
+                SELECT orders.id, customers.name, orders.crop, orders.quantity, orders.price_per_unit
+                FROM orders JOIN customers ON orders.customer_id = customers.id
+                WHERE orders.status = 'open' ORDER BY orders.id;
+            `);
+            return res.length ? res[0].values : [];
+        }
+
+        function renderOrders() {
+            const box = document.getElementById('ordersList');
+            if (!box || !dbReady) return;
+            const orders = getOpenOrders();
+            if (!orders.length) {
+                box.innerHTML = '<i style="opacity:.6;font-size:12px;">No open orders right now — check back after Next Day.</i>';
+                return;
+            }
+            box.innerHTML = orders.map(([id, custName, crop, qty, price]) => {
+                const have = gameState.inventory[crop] || 0;
+                const canFulfill = have >= qty;
+                const emoji = (CATALOG[crop] && CATALOG[crop].emoji) || '';
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--border-color);font-size:12.5px;">
+                    <span>${custName} wants ${qty}${emoji} ${crop} @ ${price}🌟 each (have ${have})</span>
+                    <button ${canFulfill ? '' : 'disabled'} style="padding:4px 10px;font-size:12px;" onclick="fulfillOrder(${id})">Fulfill (${qty * price}🌟)</button>
+                </div>`;
+            }).join('');
+        }
+
+        function fulfillOrder(orderId) {
+            if (!dbReady) return;
+            const res = db.exec(`SELECT crop, quantity, price_per_unit, status FROM orders WHERE id = ${orderId};`);
+            if (!res.length || !res[0].values.length) return;
+            const [crop, qty, price, status] = res[0].values[0];
+            if (status !== 'open') { showMessage('That order is no longer open.', 'error'); return; }
+            const have = gameState.inventory[crop] || 0;
+            if (have < qty) { showMessage(`❌ Not enough ${crop} in inventory to fulfill this order.`, 'error'); return; }
+            gameState.inventory[crop] = have - qty;
+            const earned = qty * price;
+            gameState.coins += earned;
+            gameState.totalScore += earned;
+            db.run("UPDATE orders SET status = 'fulfilled' WHERE id = ?", [orderId]);
+            saveDbState(); saveGameState();
+            renderFarm();
+            showMessage(`💼 Order fulfilled! Earned ${earned}🌟.`, 'success');
+        }
+
+        function spawnOrder(day) {
+            const customers = db.exec('SELECT id, favorite_crop FROM customers ORDER BY RANDOM() LIMIT 1;');
+            if (!customers.length || !customers[0].values.length) return;
+            const [custId, favCrop] = customers[0].values[0];
+            const crop = Math.random() < 0.6 ? favCrop : Object.keys(CATALOG)[Math.floor(Math.random() * Object.keys(CATALOG).length)];
+            const qty = 2 + Math.floor(Math.random() * 4);
+            const basePrice = (CATALOG[crop] && CATALOG[crop].market_price) || 3;
+            const price = basePrice + 1 + Math.floor(Math.random() * 2);
+            db.run('INSERT INTO orders (customer_id, crop, quantity, price_per_unit, status, day_placed) VALUES (?, ?, ?, ?, ?, ?)',
+                [custId, crop, qty, price, 'open', day]);
+        }
+
+        function nextDay() {
+            if (!dbReady) return;
+            const plots = getPlots();
+            plots.forEach(([id, row, col, crop, stage, water]) => {
+                let newStage = stage;
+                if (stage === 'seed') newStage = 'sprout';
+                else if (stage === 'sprout') newStage = 'grown';
+                else if (stage === 'grown') newStage = 'ready';
+                const newWater = Math.max(0, water - 1);
+                db.run('UPDATE plots SET stage = ?, water_level = ? WHERE id = ?', [newStage, newWater, id]);
+            });
+
+            // Running a farm costs money — land upkeep (water, basic maintenance) is
+            // charged daily whether you're profitable that day or not, just like a
+            // real business's fixed costs.
+            const expense = upkeepCost(plots.length);
+            gameState.coins = Math.max(0, gameState.coins - expense);
+
+            // Old open orders go stale if left unfulfilled too long.
+            db.run(`UPDATE orders SET status = 'expired' WHERE status = 'open' AND ? - day_placed >= 3;`, [gameState.day]);
+            // A new customer order or two shows up each day.
+            spawnOrder(gameState.day);
+            if (Math.random() < 0.5) spawnOrder(gameState.day);
+
+            gameState.day++;
+            saveDbState(); saveGameState();
+            renderFarm();
+            showMessage(`☀️ Day ${gameState.day} — crops grew, water dropped, and upkeep cost you ${expense}🌟.`, 'info');
+        }
+
+        function plantEmpty() {
+            if (!dbReady) return;
+            const plots = getPlots().filter(p => p[4] === 'empty');
+            if (!plots.length) { showMessage('🌱 No empty plots to plant right now.', 'info'); return; }
+            const names = Object.keys(CATALOG);
+            let spent = 0;
+            plots.forEach(([id]) => {
+                const cropName = names[Math.floor(Math.random() * names.length)];
+                const cost = CATALOG[cropName].seed_cost;
+                if (gameState.coins - spent < cost) return;
+                spent += cost;
+                db.run("UPDATE plots SET crop = ?, stage = 'seed', water_level = 3 WHERE id = ?", [cropName, id]);
+            });
+            gameState.coins -= spent;
+            saveDbState(); saveGameState();
+            renderFarm();
+            showMessage(spent > 0 ? `🌱 Planted for ${spent}🌟.` : "🌟 Not enough coins to plant.", spent > 0 ? 'success' : 'error');
+        }
+
+        function sellAll() {
+            const entries = Object.entries(gameState.inventory).filter(([, n]) => n > 0);
+            if (!entries.length) { showMessage('🎒 Your inventory is empty — harvest some crops first.', 'info'); return; }
+            let earned = 0;
+            entries.forEach(([crop, n]) => {
+                const price = (CATALOG[crop] && CATALOG[crop].market_price) || 1;
+                earned += price * n;
+                gameState.inventory[crop] = 0;
+            });
+            gameState.coins += earned;
+            gameState.totalScore += earned;
+            saveGameState();
+            renderFarm();
+            showMessage(`💰 Sold your harvest for ${earned}🌟!`, 'success');
+        }
+
+        function buyPlot() {
+            const plots = getPlots();
+            const cost = plotCost(plots.length);
+            if (gameState.coins < cost) { showMessage(`🌟 Need ${cost} coins to buy more land (you have ${gameState.coins}).`, 'error'); return; }
+            const maxRow = Math.max(...plots.map(p => p[1]));
+            const cols = plots.filter(p => p[1] === maxRow).length;
+            let row = maxRow, col = cols + 1;
+            if (col > 5) { row = maxRow + 1; col = 1; }
+            db.run('INSERT INTO plots (row, col, crop, stage, water_level) VALUES (?, ?, NULL, \'empty\', 0)', [row, col]);
+            gameState.coins -= cost;
+            saveDbState(); saveGameState();
+            renderFarm();
+            showMessage(`🧱 New plot claimed for ${cost}🌟! Your farm is growing.`, 'success');
+        }
 
         // ===== DARK MODE =====
         function toggleDarkMode() {
@@ -942,7 +1412,15 @@
         function loadGameState() {
             const saved = localStorage.getItem('queryFarmState');
             if (saved) {
-                gameState = JSON.parse(saved);
+                gameState = Object.assign(
+                    { stage: 'lesson', progress: { easy: 0, normal: 0, hard: 0 }, coins: 50, inventory: {}, day: 1 },
+                    JSON.parse(saved)
+                );
+                if (!gameState.progress) gameState.progress = { easy: 0, normal: 0, hard: 0 };
+                if (!gameState.stage) gameState.stage = 'lesson';
+                if (typeof gameState.coins !== 'number') gameState.coins = 50;
+                if (!gameState.inventory) gameState.inventory = {};
+                if (!gameState.day) gameState.day = 1;
                 updateUI();
                 updateAchievementsUI();
             } else {
@@ -1051,84 +1529,195 @@
         }
 
         // ===== DIFFICULTY & MISSIONS =====
+        // Every mission runs against your actual farm (see initDatabase above):
+        //   plots(id, row, col, crop, stage, water_level)
+        //   crop_catalog(name, emoji, market_price, seed_cost)
+        //   harvest_log(id, plot_id, crop, day)
         const LESSONS = {
             easy: [
                 {
-                    title: 'SELECT from Table',
-                    description: 'Retrieve all customers from the CUSTOMERS table.',
-                    table: 'CUSTOMERS',
-                    data: [{ id: 1, name: 'Alice', email: 'alice@farm.com' }, { id: 2, name: 'Bob', email: 'bob@farm.com' }],
-                    expectedQuery: 'SELECT * FROM CUSTOMERS',
-                    realWorldExample: 'A farmer wants to see all registered customers in their database.',
-                    crop: '🌱'
+                    title: 'Full Field Scan',
+                    description: 'Run a full diagnostic scan of every plot — select every column and every row from plots.',
+                    concept: 'SELECT * FROM table; returns every column and every row — the whole field, unfiltered.',
+                    syntax: 'SELECT *\nFROM table_name;',
+                    expectedQuery: 'SELECT * FROM plots',
+                    orderMatters: false,
+                    realWorldExample: 'The first thing any farmer (or automation script) does each morning: see the whole field at once.',
+                    crop: '🔍',
+                    quiz: {
+                        question: 'What does SELECT * FROM plots actually do?',
+                        options: ['Deletes all rows in the plots table', 'Returns every column, for every row, in plots', 'Sorts the plots table alphabetically', 'Counts how many plots exist'],
+                        correctIndex: 1,
+                        explanation: 'The * is shorthand for "every column" — no filtering, no sorting, just the whole table.'
+                    }
                 },
                 {
-                    title: 'WHERE Clause',
-                    description: 'Find customers named Alice.',
-                    table: 'CUSTOMERS',
-                    data: [{ id: 1, name: 'Alice', email: 'alice@farm.com' }, { id: 2, name: 'Bob', email: 'bob@farm.com' }],
-                    expectedQuery: 'SELECT * FROM CUSTOMERS WHERE name = \'Alice\'',
-                    realWorldExample: 'Find a specific customer\'s records by their name.',
-                    crop: '🌿'
+                    title: 'Ready To Harvest',
+                    description: "Find every plot that's ripe and ready to harvest (stage = 'ready').",
+                    concept: 'WHERE filters rows to only the ones matching a condition. Text values need single quotes.',
+                    syntax: "SELECT *\nFROM table_name\nWHERE column = 'value';",
+                    expectedQuery: "SELECT * FROM plots WHERE stage = 'ready'",
+                    orderMatters: false,
+                    realWorldExample: 'Knowing what to harvest today, without walking the whole field.',
+                    crop: '🌾',
+                    quiz: {
+                        question: 'Which clause filters rows down to only the ones matching a condition?',
+                        options: ['ORDER BY', 'GROUP BY', 'WHERE', 'LIMIT'],
+                        correctIndex: 2,
+                        explanation: 'WHERE is checked row by row — only rows where the condition is true make it into the result.'
+                    }
                 },
                 {
-                    title: 'ORDER BY',
-                    description: 'List all products ordered by price (ascending).',
-                    table: 'PRODUCTS',
-                    data: [{ name: 'Corn', price: 5 }, { name: 'Wheat', price: 3 }, { name: 'Barley', price: 4 }],
-                    expectedQuery: 'SELECT * FROM PRODUCTS ORDER BY price ASC',
-                    realWorldExample: 'Sort products by price to show the cheapest first.',
-                    crop: '🌾'
+                    title: 'Priority Watering',
+                    description: 'Get the 3 thirstiest plots — order by water_level ascending, then limit to 3.',
+                    concept: 'ORDER BY column ASC/DESC sorts rows; LIMIT n caps how many come back — together, the "top N" pattern.',
+                    syntax: 'SELECT *\nFROM table_name\nORDER BY column ASC\nLIMIT n;',
+                    expectedQuery: 'SELECT * FROM plots ORDER BY water_level ASC LIMIT 3',
+                    orderMatters: true,
+                    realWorldExample: 'Sending a water drone to the driest plots first, not just a random three.',
+                    crop: '💧',
+                    quiz: {
+                        question: "Which combination gets you the 3 lowest values in a column?",
+                        options: ['WHERE column < 3', 'ORDER BY column ASC LIMIT 3', 'GROUP BY column LIMIT 3', 'SELECT TOP 3 column'],
+                        correctIndex: 1,
+                        explanation: 'Sort lowest-to-highest first with ORDER BY, then LIMIT caps how many rows come back.'
+                    }
                 }
             ],
             normal: [
                 {
-                    title: 'JOIN Tables',
-                    description: 'Find which customers bought which products.',
-                    tables: ['CUSTOMERS', 'ORDERS', 'PRODUCTS'],
-                    expectedQuery: 'SELECT c.name, p.name FROM CUSTOMERS c JOIN ORDERS o ON c.id = o.customer_id JOIN PRODUCTS p ON o.product_id = p.id',
-                    realWorldExample: 'Link customers to their purchases and show product names.',
-                    crop: '🌽'
+                    title: 'Harvest Time!',
+                    description: "For every plot where stage = 'ready', set crop = NULL, stage = 'empty', and water_level = 0.",
+                    concept: 'UPDATE table SET col = value WHERE condition; changes rows in place. This one really harvests your farm — harvested crops go straight to your inventory.',
+                    syntax: 'UPDATE table_name\nSET column = value\nWHERE condition;',
+                    expectedQuery: "UPDATE plots SET crop = NULL, stage = 'empty', water_level = 0 WHERE stage = 'ready'",
+                    type: 'mutate', compareTable: 'plots',
+                    realWorldExample: 'This is the real harvest action — the crops you collect are added to your inventory to sell.',
+                    crop: '🌽',
+                    quiz: {
+                        question: 'What happens if you run an UPDATE statement with no WHERE clause at all?',
+                        options: ['Nothing happens — SQLite requires a WHERE clause', 'It only updates the first row it finds', 'It updates every single row in the table', 'It asks for confirmation before running'],
+                        correctIndex: 2,
+                        explanation: "WHERE is what limits the damage — without it, SET applies to every row. Always check your WHERE with a SELECT first."
+                    }
                 },
                 {
-                    title: 'GROUP BY & COUNT',
-                    description: 'Count how many products each customer has ordered.',
-                    tables: ['CUSTOMERS', 'ORDERS'],
-                    expectedQuery: 'SELECT c.name, COUNT(o.id) FROM CUSTOMERS c LEFT JOIN ORDERS o ON c.id = o.customer_id GROUP BY c.id, c.name',
-                    realWorldExample: 'Identify top customers based on order count.',
-                    crop: '🥕'
+                    title: 'File The Report',
+                    description: "Log that plot 3 (crop 'pumpkin') was harvested on day 5. Insert into harvest_log using columns plot_id, crop, day.",
+                    concept: 'INSERT INTO table (columns) VALUES (...); adds a brand new row.',
+                    syntax: 'INSERT INTO table_name (col1, col2)\nVALUES (val1, val2);',
+                    expectedQuery: "INSERT INTO harvest_log (plot_id, crop, day) VALUES (3, 'pumpkin', 5)",
+                    type: 'mutate', compareTable: 'harvest_log',
+                    realWorldExample: 'Real farms (and real apps) keep a permanent log of what happened and when.',
+                    crop: '📋',
+                    quiz: {
+                        question: 'In INSERT INTO table (col1, col2) VALUES (val1, val2), what has to match?',
+                        options: ['The table name must match a variable name', 'The number and order of columns must match the number and order of values', 'Column names must be listed alphabetically', "Nothing — SQLite guesses what you meant"],
+                        correctIndex: 1,
+                        explanation: 'Column list and value list are positional — the first value fills the first listed column, and so on.'
+                    }
                 },
                 {
-                    title: 'Aggregate Functions',
-                    description: 'Find the average price of all products.',
-                    table: 'PRODUCTS',
-                    expectedQuery: 'SELECT AVG(price) FROM PRODUCTS',
-                    realWorldExample: 'Calculate average product pricing for budgeting.',
-                    crop: '🥔'
+                    title: 'Crop Census',
+                    description: 'Count how many plots have each crop planted (ignore empty plots). Return crop and the count as total.',
+                    concept: 'GROUP BY buckets rows by a shared value so an aggregate like COUNT(*) runs once per bucket.',
+                    syntax: 'SELECT column, COUNT(*) AS alias\nFROM table_name\nGROUP BY column;',
+                    expectedQuery: 'SELECT crop, COUNT(*) AS total FROM plots WHERE crop IS NOT NULL GROUP BY crop',
+                    orderMatters: false,
+                    realWorldExample: 'Knowing your crop mix at a glance before deciding what to plant next.',
+                    crop: '📊',
+                    quiz: {
+                        question: 'What does GROUP BY actually do?',
+                        options: ['Sorts rows alphabetically', 'Buckets rows that share a value so an aggregate can run once per bucket', 'Permanently deletes duplicate rows', 'Combines two tables together'],
+                        correctIndex: 1,
+                        explanation: 'Without GROUP BY, COUNT(*) would collapse the whole table into one number — GROUP BY gives you one number per group instead.'
+                    }
                 }
             ],
             hard: [
                 {
-                    title: 'Subqueries',
-                    description: 'Find customers who spent more than the average order value.',
-                    tables: ['CUSTOMERS', 'ORDERS'],
-                    expectedQuery: 'SELECT c.name FROM CUSTOMERS c WHERE c.id IN (SELECT customer_id FROM ORDERS WHERE total > (SELECT AVG(total) FROM ORDERS))',
-                    realWorldExample: 'Identify high-value customers for targeted marketing.',
-                    crop: '🍅'
+                    title: 'Below The Average',
+                    description: "Find every plot drier than the field's average water_level.",
+                    concept: 'A subquery is a SELECT nested inside another statement — it runs first, and its single result feeds the outer condition.',
+                    syntax: 'SELECT *\nFROM table_name\nWHERE column < (SELECT AVG(column) FROM table_name);',
+                    expectedQuery: 'SELECT * FROM plots WHERE water_level < (SELECT AVG(water_level) FROM plots)',
+                    orderMatters: false,
+                    realWorldExample: "Spotting the plots that are falling behind the field's own average, not some fixed number.",
+                    crop: '🍂',
+                    quiz: {
+                        question: 'What is a subquery?',
+                        options: ['A backup copy of a table', 'A SELECT statement nested inside another statement', 'A special kind of WHERE clause with no other purpose', 'A type of database index'],
+                        correctIndex: 1,
+                        explanation: 'The inner SELECT runs first and produces a value (or set of values) the outer query then uses.'
+                    }
                 },
                 {
-                    title: 'Window Functions',
-                    description: 'Rank customers by total spending.',
-                    tables: ['CUSTOMERS', 'ORDERS'],
-                    expectedQuery: 'SELECT c.name, SUM(o.total) as total_spent, RANK() OVER (ORDER BY SUM(o.total) DESC) FROM CUSTOMERS c JOIN ORDERS o ON c.id = o.customer_id GROUP BY c.id, c.name',
-                    realWorldExample: 'Rank customers to identify VIPs.',
-                    crop: '🍂'
+                    title: 'Market Check',
+                    description: "Check today's market price for every planted plot — join plots to crop_catalog on the crop name.",
+                    concept: 'JOIN stitches two tables together on a shared key — plots.crop matches crop_catalog.name.',
+                    syntax: 'SELECT a.col, b.col\nFROM table_a a\nJOIN table_b b ON a.key = b.key;',
+                    expectedQuery: "SELECT plots.id, plots.crop, crop_catalog.market_price FROM plots JOIN crop_catalog ON plots.crop = crop_catalog.name WHERE plots.crop IS NOT NULL",
+                    orderMatters: false,
+                    realWorldExample: "Deciding what's worth harvesting first based on real market value.",
+                    crop: '💰',
+                    quiz: {
+                        question: 'What does a plain JOIN do?',
+                        options: ['Combines every row of one table with every row of another, no matter what', 'Keeps only rows that find a matching key in both tables', 'Permanently deletes rows with no match', 'Renames a column for display purposes'],
+                        correctIndex: 1,
+                        explanation: 'JOIN only keeps rows where the ON condition finds a match on both sides — unmatched rows on either side are dropped.'
+                    }
+                },
+                {
+                    title: 'Drought Ranking',
+                    description: 'Rank every plot by dryness — driest gets rank 1. Return id, water_level, and the rank as drought_rank.',
+                    concept: 'A window function like RANK() OVER (ORDER BY ...) calculates something across rows without collapsing them the way GROUP BY does.',
+                    syntax: 'SELECT column,\n  RANK() OVER (ORDER BY column ASC) AS alias\nFROM table_name;',
+                    expectedQuery: 'SELECT id, water_level, RANK() OVER (ORDER BY water_level ASC) AS drought_rank FROM plots',
+                    orderMatters: true,
+                    realWorldExample: 'A priority list for the whole farm crew, generated instead of eyeballed.',
+                    crop: '🏆',
+                    quiz: {
+                        question: 'How is a window function like RANK() OVER (...) different from GROUP BY?',
+                        options: ['It requires a WHERE clause to work at all', 'It collapses all rows into one single summary row', 'It calculates something across rows without collapsing them — every row keeps its own line', 'It only works on text columns, never numbers'],
+                        correctIndex: 2,
+                        explanation: "Unlike GROUP BY, a window function doesn't reduce the row count — it just adds a calculated column like a rank to each existing row."
+                    }
+                },
+                {
+                    title: 'The Order Book',
+                    description: "List every open order with the customer's name attached — join orders to customers, keeping only status = 'open'.",
+                    concept: 'The same JOIN pattern works on any two related tables — here, orders.customer_id matches customers.id, so you can see who actually wants what.',
+                    syntax: "SELECT a.col, b.col\nFROM table_a a\nJOIN table_b b ON a.key = b.key\nWHERE a.status = 'value';",
+                    expectedQuery: "SELECT customers.name, orders.crop, orders.quantity, orders.price_per_unit FROM orders JOIN customers ON orders.customer_id = customers.id WHERE orders.status = 'open'",
+                    orderMatters: false,
+                    realWorldExample: "Exactly what the Open Orders panel above is doing behind the scenes — now you can build it yourself.",
+                    crop: '💼',
+                    quiz: {
+                        question: 'In orders.customer_id = customers.id, what is orders.customer_id?',
+                        options: ['A primary key for the orders table', 'A foreign key — it stores a customers.id value to link the two tables', 'An aggregate function', 'A subquery'],
+                        correctIndex: 1,
+                        explanation: "orders doesn't repeat the customer's name and details — it just stores their id and looks the rest up via JOIN when needed."
+                    }
                 }
             ]
         };
 
+        const LEVEL_ORDER = ['easy', 'normal', 'hard'];
+
+        function isLevelUnlocked(level) {
+            const idx = LEVEL_ORDER.indexOf(level);
+            if (idx <= 0) return true;
+            const prevLevel = LEVEL_ORDER[idx - 1];
+            return gameState.progress[prevLevel] >= LESSONS[prevLevel].length;
+        }
+
         function setDifficulty(level) {
+            if (!isLevelUnlocked(level)) {
+                showMessage(`🔒 Finish every lesson in ${LEVEL_ORDER[LEVEL_ORDER.indexOf(level) - 1].toUpperCase()} first to unlock ${level.toUpperCase()}.`, 'error');
+                return;
+            }
             gameState.difficulty = level;
+            gameState.stage = 'lesson';
             gameState.achievements[`difficulty_${level}`] = true;
             saveGameState();
             updateDifficultyUI();
@@ -1138,29 +1727,138 @@
         function updateDifficultyUI() {
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
                 btn.classList.remove('active');
+                const level = ['easy', 'normal', 'hard'].find(l => btn.classList.contains(l));
+                const unlocked = isLevelUnlocked(level);
+                btn.disabled = !unlocked;
+                btn.style.opacity = unlocked ? '1' : '0.4';
+                btn.style.cursor = unlocked ? 'pointer' : 'not-allowed';
+                const doneCount = gameState.progress[level] || 0;
+                const total = LESSONS[level].length;
+                btn.textContent = `${level.charAt(0).toUpperCase() + level.slice(1)}${unlocked ? ` (${doneCount}/${total})` : ' 🔒'}`;
             });
             document.querySelector(`.difficulty-btn.${gameState.difficulty}`).classList.add('active');
         }
 
         function generateMission() {
             const lessons = LESSONS[gameState.difficulty];
-            gameState.currentMission = lessons[Math.floor(Math.random() * lessons.length)];
+            const idx = gameState.progress[gameState.difficulty];
+            if (idx >= lessons.length) {
+                gameState.currentMission = null;
+                gameState.stage = 'level-complete';
+                renderMission();
+                return;
+            }
+            gameState.currentMission = lessons[idx];
+            if (gameState.stage !== 'challenge' && gameState.stage !== 'quiz') gameState.stage = 'lesson';
             renderMission();
         }
 
+        function setInputEnabled(enabled) {
+            const input = document.getElementById('sqlInput');
+            const btn = document.querySelector('button[onclick="submitQuery()"]');
+            if (input) input.disabled = !enabled;
+            if (btn && dbReady) btn.disabled = !enabled;
+        }
+
         function renderMission() {
+            const level = gameState.difficulty;
+            const idx = gameState.progress[level];
+            const total = LESSONS[level].length;
+
+            if (gameState.stage === 'level-complete') {
+                const nextLevel = LEVEL_ORDER[LEVEL_ORDER.indexOf(level) + 1];
+                document.getElementById('gameField').innerHTML = `
+                    <div class="mission" style="text-align:center;">
+                        <div class="mission-title">🎉 ${level.toUpperCase()} Level Complete!</div>
+                        <div class="mission-description">You've cleared every lesson and challenge in this level.</div>
+                        ${nextLevel ? `<button onclick="setDifficulty('${nextLevel}')" style="margin-top:10px;">Start ${nextLevel.toUpperCase()} &rarr;</button>` : '<div class="mission-description">You\'ve completed every level. 🏆</div>'}
+                    </div>
+                `;
+                setInputEnabled(false);
+                return;
+            }
+
             if (!gameState.currentMission) return;
-
             const mission = gameState.currentMission;
-            let html = `
-                <div class="mission">
-                    <div class="mission-title">${mission.title}</div>
-                    <div class="mission-description">${mission.description}</div>
-                    ${mission.realWorldExample ? `<div class="real-world-example">💼 Real World: ${mission.realWorldExample}</div>` : ''}
-                </div>
-            `;
 
-            document.getElementById('gameField').innerHTML = html;
+            if (gameState.stage === 'lesson') {
+                document.getElementById('gameField').innerHTML = `
+                    <div class="mission">
+                        <div class="mission-title">📖 Lesson ${idx + 1} of ${total} — ${mission.title}</div>
+                        <div class="real-world-example" style="border-left-color:#3b82f6;">${mission.concept}</div>
+                        ${mission.syntax ? `<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:10px 12px;margin:10px 0;font-family:'Courier New',monospace;font-size:13px;white-space:pre-wrap;color:var(--text-primary);">${mission.syntax}</div>` : ''}
+                        ${mission.realWorldExample ? `<div class="real-world-example">💼 Real World: ${mission.realWorldExample}</div>` : ''}
+                        <button onclick="startQuiz()" style="margin-top:10px;width:100%;">📝 Take the quiz &rarr;</button>
+                    </div>
+                `;
+                setInputEnabled(false);
+                return;
+            }
+
+            if (gameState.stage === 'quiz') {
+                const q = mission.quiz;
+                document.getElementById('gameField').innerHTML = `
+                    <div class="mission">
+                        <div class="mission-title">📝 Quick Check — ${mission.title}</div>
+                        <div class="mission-description" style="margin-bottom:10px;">${q.question}</div>
+                        <div id="quizOptions">
+                            ${q.options.map((opt, i) => `<button class="outline quiz-option" style="width:100%;text-align:left;margin-bottom:8px;" onclick="selectQuizOption(${i})">${String.fromCharCode(65 + i)}. ${opt}</button>`).join('')}
+                        </div>
+                        <div id="quizFeedback" style="margin-top:8px;font-size:13px;"></div>
+                        <button class="outline" onclick="gameState.stage='lesson'; saveGameState(); renderMission();" style="margin-top:8px;width:100%;">‹ Review the lesson again</button>
+                    </div>
+                `;
+                setInputEnabled(false);
+                return;
+            }
+
+            // stage === 'challenge'
+            document.getElementById('gameField').innerHTML = `
+                <div class="mission">
+                    <div class="mission-title">🎯 Challenge ${idx + 1} of ${total} — ${mission.title}</div>
+                    <div class="mission-description">${mission.description}</div>
+                    <button class="outline" style="margin-top:8px;" onclick="toggleHint()">💡 Need a hint?</button>
+                    <div id="hintBox" style="display:none;margin-top:8px;font-family:'Courier New',monospace;font-size:13px;color:var(--text-secondary);">${mission.expectedQuery};</div>
+                </div>
+                <div id="queryResult"></div>
+            `;
+            setInputEnabled(true);
+        }
+
+        function startQuiz() {
+            gameState.stage = 'quiz';
+            saveGameState();
+            renderMission();
+        }
+
+        function selectQuizOption(choiceIdx) {
+            const mission = gameState.currentMission;
+            const q = mission.quiz;
+            const buttons = document.querySelectorAll('#quizOptions .quiz-option');
+            buttons.forEach(b => b.disabled = true);
+            const feedback = document.getElementById('quizFeedback');
+            if (choiceIdx === q.correctIndex) {
+                buttons[choiceIdx].style.borderColor = 'var(--primary)';
+                buttons[choiceIdx].style.color = 'var(--primary)';
+                feedback.innerHTML = `✅ Exactly right. ${q.explanation || ''}<br><button onclick="startChallenge()" style="margin-top:10px;width:100%;">Unlock the challenge &rarr;</button>`;
+            } else {
+                buttons[choiceIdx].style.borderColor = 'var(--danger)';
+                buttons[choiceIdx].style.color = 'var(--danger)';
+                buttons[q.correctIndex].style.borderColor = 'var(--primary)';
+                buttons[q.correctIndex].style.color = 'var(--primary)';
+                feedback.innerHTML = `❌ Not quite — the correct answer is highlighted above. ${q.explanation || ''}<br><button onclick="renderMission()" style="margin-top:10px;width:100%;">Try the question again</button>`;
+            }
+        }
+
+        function startChallenge() {
+            gameState.stage = 'challenge';
+            saveGameState();
+            renderMission();
+        }
+
+        function toggleHint() {
+            const box = document.getElementById('hintBox');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
         }
 
         // ===== THEME SYSTEM =====
@@ -1179,7 +1877,7 @@
 
         // ===== SQL AUTO-COMPLETE =====
         const SQL_KEYWORDS = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER BY', 'GROUP BY', 'JOIN', 'LEFT JOIN', 'COUNT', 'AVG', 'SUM', 'MAX', 'MIN', 'LIMIT', 'INSERT', 'UPDATE', 'DELETE'];
-        const SQL_TABLES = ['CUSTOMERS', 'PRODUCTS', 'ORDERS', 'USERS', 'ITEMS'];
+        const SQL_TABLES = ['plots', 'crop_catalog', 'harvest_log', 'customers', 'orders', 'id', 'row', 'col', 'crop', 'stage', 'water_level', 'market_price', 'seed_cost', 'plot_id', 'day', 'name', 'favorite_crop', 'customer_id', 'quantity', 'price_per_unit', 'status', 'day_placed'];
 
         document.getElementById('sqlInput').addEventListener('input', function(e) {
             const value = this.value.toUpperCase();
@@ -1340,6 +2038,10 @@
                 showMessage('❌ Please enter a SQL query.', 'error');
                 return;
             }
+            if (!dbReady) {
+                showMessage('⏳ The database is still loading — try again in a second.', 'info');
+                return;
+            }
 
             addToHistory(query);
 
@@ -1349,47 +2051,144 @@
             }
 
             const mission = gameState.currentMission;
-            const expectedKeywords = mission.expectedQuery.split(/\s+/).filter(w => w.length > 3);
-            const queryKeywords = query.toUpperCase().split(/\s+/).filter(w => w.length > 3);
+            const resultBox = document.getElementById('queryResult');
 
-            const hasKeywords = expectedKeywords.some(keyword => queryKeywords.includes(keyword));
-
-            if (hasKeywords) {
+            function onSuccess(displayRes) {
                 gameState.missionsCompleted++;
                 gameState.correctAnswers++;
                 gameState.streak++;
                 gameState.totalScore += (10 + gameState.streak * 5);
-                
-                showMessage(`✅ Correct! Your SQL query was valid! ${mission.crop}`, 'success');
-                
-                const field = document.getElementById('gameField');
-                field.innerHTML += `<div class="crop">${mission.crop}</div>`;
+
+                showMessage(`✅ Correct! Your SQL query returned the right result! ${mission.crop}`, 'success');
+                if (resultBox) resultBox.innerHTML = renderResultTable(displayRes);
 
                 updateLeaderboard();
+                gameState.progress[gameState.difficulty]++;
+                gameState.stage = 'lesson';
+                saveDbState();
+                renderFarm();
 
                 setTimeout(() => {
                     document.getElementById('sqlInput').value = '';
                     generateMission();
+                    updateDifficultyUI();
                     updateStoryDisplay();
                     updateStatsUI();
                     updateProfileDisplay();
                     checkAchievements();
                     saveGameState();
                 }, 1500);
+            }
+
+            if (mission.type === 'mutate') {
+                // Test the player's write against a disposable clone of the farm first —
+                // a wrong WHERE clause can never damage the real, persistent farm.
+                let preBuffer, cloneUser, cloneSol;
+                try { preBuffer = db.export(); }
+                catch (e) { showMessage('❌ Could not snapshot the farm.', 'error'); return; }
+                try {
+                    cloneUser = new SQLNS.Database(preBuffer);
+                    cloneUser.run(query);
+                } catch (err) {
+                    gameState.streak = 0;
+                    showMessage('❌ SQLite rejected that query: ' + err.message, 'error');
+                    if (resultBox) resultBox.innerHTML = '';
+                    saveGameState();
+                    return;
+                }
+                cloneSol = new SQLNS.Database(preBuffer);
+                cloneSol.run(mission.expectedQuery);
+                const t = mission.compareTable;
+                const a = cloneUser.exec(`SELECT * FROM ${t} ORDER BY id;`);
+                const b = cloneSol.exec(`SELECT * FROM ${t} ORDER BY id;`);
+                const aRows = a.length ? a[0].values : [];
+                const bRows = b.length ? b[0].values : [];
+                if (!rowsEqual(aRows, bRows, true)) {
+                    gameState.streak = 0;
+                    showMessage('❌ That command ran, but the farm ended up in the wrong state. Check your WHERE clause and the values you\'re setting.', 'error');
+                    saveGameState();
+                    return;
+                }
+                // Correct — apply the change to the real, persistent farm.
+                const preRows = db.exec(`SELECT * FROM ${t} ORDER BY id;`).length ? db.exec(`SELECT * FROM ${t} ORDER BY id;`)[0].values : [];
+                db.run(mission.expectedQuery);
+                const postRes = db.exec(`SELECT * FROM ${t} ORDER BY id;`);
+                if (t === 'plots') creditHarvestFromDiff(preRows, postRes.length ? postRes[0].values : []);
+                onSuccess(postRes);
+                return;
+            }
+
+            // SELECT-style mission: run both queries for real and compare actual results.
+            let userRes;
+            try {
+                userRes = db.exec(query);
+            } catch (err) {
+                gameState.streak = 0;
+                showMessage('❌ SQLite rejected that query: ' + err.message, 'error');
+                if (resultBox) resultBox.innerHTML = '';
+                saveGameState();
+                return;
+            }
+            const solRes = db.exec(mission.expectedQuery);
+            const uRows = userRes.length ? userRes[userRes.length - 1].values : [];
+            const sRows = solRes.length ? solRes[solRes.length - 1].values : [];
+            const correct = uRows.length > 0 && rowsEqual(uRows, sRows, !!mission.orderMatters);
+
+            if (resultBox) resultBox.innerHTML = renderResultTable(userRes);
+
+            if (correct) {
+                onSuccess(userRes);
             } else {
                 gameState.streak = 0;
-                showMessage('❌ Query structure doesn\'t match. Try using: ' + mission.expectedQuery.split(' ').slice(0, 3).join(' '), 'error');
+                showMessage('❌ That query ran, but the results don\'t match yet. Check the table below against what the mission asks for.', 'error');
                 saveGameState();
             }
         }
 
         function skipMission() {
             gameState.streak = 0;
+            if (gameState.stage === 'challenge' || gameState.stage === 'quiz') {
+                gameState.progress[gameState.difficulty]++;
+                gameState.stage = 'lesson';
+            }
             generateMission();
+            updateDifficultyUI();
             document.getElementById('sqlInput').value = '';
             updateStatsUI();
             updateStoryDisplay();
             saveGameState();
+        }
+
+        // ===== FREE-PLAY CONSOLE =====
+        // No mission gating here — any valid SQL runs directly against your real,
+        // persistent farm. This is how the game keeps going after the lessons are done:
+        // plant, water, harvest, and manage land expansion with your own queries.
+        function runFreeQuery() {
+            const box = document.getElementById('freeResult');
+            const query = document.getElementById('freeInput').value.trim();
+            if (!query) { box.innerHTML = '<div style="color:var(--danger);font-size:13px;">Write a query first.</div>'; return; }
+            if (!dbReady) { box.innerHTML = '<div style="font-size:13px;">⏳ Farm database still loading...</div>'; return; }
+
+            const preRows = getPlots();
+            let res;
+            try {
+                res = db.exec(query);
+            } catch (err) {
+                box.innerHTML = `<div style="color:var(--danger);font-size:13px;font-family:'Courier New',monospace;">SQLite rejected that: ${err.message}</div>`;
+                return;
+            }
+
+            box.innerHTML = renderResultTable(res);
+            addToHistory(query);
+            saveDbState();
+
+            const postRows = getPlots();
+            const harvested = creditHarvestFromDiff(preRows, postRows);
+            if (harvested > 0) {
+                saveGameState();
+                showMessage(`🌾 Harvested ${harvested} plot${harvested > 1 ? 's' : ''} via free play — check your inventory!`, 'success');
+            }
+            renderFarm();
         }
 
         // ===== UI UPDATES =====
@@ -1444,9 +2243,23 @@
         updateHistoryUI();
         updateStoryDisplay();
 
-        // ENTER KEY SUPPORT
-        document.getElementById('sqlInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') submitQuery();
+        const submitBtn = document.querySelector('button[onclick="submitQuery()"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Loading database...'; }
+        initDatabase().then(() => {
+            if (submitBtn) submitBtn.textContent = '✓ Submit Query';
+            setInputEnabled(gameState.stage === 'challenge');
+            renderFarm();
+        }).catch(err => {
+            showMessage('❌ Could not load the SQL engine: ' + err.message, 'error');
+        });
+
+        // KEYBOARD SUPPORT — Ctrl/Cmd+Enter submits; plain Enter just makes a new line,
+        // since both query boxes are now full multi-line editors.
+        document.getElementById('sqlInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submitQuery(); }
+        });
+        document.getElementById('freeInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runFreeQuery(); }
         });
     </script>
 </body>
